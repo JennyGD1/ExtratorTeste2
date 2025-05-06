@@ -1,0 +1,26 @@
+/* static/css/detalhes_mes.css */
+
+.year-selector {
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.year-selector label {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.year-selector select {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+}
+
+.mes-container {
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
