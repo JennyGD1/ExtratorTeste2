@@ -2,20 +2,20 @@ import fitz  # PyMuPDF
 import re
 import os
 import json
-from familia import GrupoFamiliar
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from werkzeug.utils import secure_filename
-from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
-from tabelas_planserv import carregar_tabelas, obter_valor_por_faixa, setup_logging as setup_tabelas_logging, FaixaContribuicao, TabelaPlanserv
+from familia import GrupoFamiliar
 
 app = Flask(__name__)
 app.secret_key = 'sua-chave-secreta-aqui'
 
-# Configuração do logger para a aplicação
+# Configuração do logger
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         RotatingFileHandler('app.log', maxBytes=100000, backupCount=3),
@@ -24,14 +24,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Configurar o logger para tabelas_planserv (se desejar um log separado)
-# setup_tabelas_logging()
-logger_tabelas = logging.getLogger('tabelas_planserv')
-logger_tabelas.setLevel(logging.INFO)
-handler_tabelas = logging.StreamHandler()
-formatter_tabelas = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler_tabelas.setFormatter(formatter_tabelas)
-logger_tabelas.addHandler(handler_tabelas)
+# Valores fixos para agregados
+VALORES_AGREGADOS = {
+    'agregado_jovem': {
+        '2023': 75.91,
+        '2021': 72.99,
+        'default': 70.18
+    },
+    'agregado_maior': 'titular'
+}
 
 MESES_ORDEM = {
     'Janeiro': 1, 'Fevereiro': 2, 'Março': 3, 'Abril': 4,
@@ -41,26 +42,19 @@ MESES_ORDEM = {
     'JUL': 7, 'AGO': 8, 'SET': 9, 'OUT': 10, 'NOV': 11, 'DEZ': 12
 }
 
-# Configurações (igual ao anterior)
+# Configurações
 UPLOAD_FOLDER = '/tmp/uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config.update({
     'UPLOAD_FOLDER': UPLOAD_FOLDER,
     'MAX_CONTENT_LENGTH': 100 * 1024 * 1024,
-    'ALLOWED_EXTENSIONS': {'pdf'},
-    'TABELAS_PLANSERV': {}  # Dicionário para armazenar as tabelas carregadas
+    'ALLOWED_EXTENSIONS': {'pdf'}
 })
-
-# Carregar as tabelas Planserv ao iniciar o aplicativo
-with app.app_context():
-    app.config['TABELAS_PLANSERV'] = carregar_tabelas('tabelas')
-    logger.info(f"Tabelas Planserv carregadas: Anos disponíveis - {list(app.config['TABELAS_PLANSERV'].keys())}")
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 def extrair_valor_linha(linha):
-    # Função extrair_valor_linha (igual à anterior)
     padrao_valor = r'(\d{1,3}(?:[\.\s]?\d{3})*(?:[.,]\d{2})|\d+[.,]\d{2})'
     valores = re.findall(padrao_valor, linha)
     if valores:
@@ -72,10 +66,6 @@ def extrair_valor_linha(linha):
     return 0.0
 
 def extrair_mes_ano_do_texto(texto_pagina):
-    """
-    Extrai o primeiro Mês/Ano encontrado no texto da página.
-    Retorna uma tupla com (string_formatada, ano) ou ("Período não identificado", None)
-    """
     padrao_mes_ano = r'(Janeiro|Fevereiro|Março|Abril|Maio|Junho|Julho|Agosto|Setembro|Outubro|Novembro|Dezembro|JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s*[/.-]?\s*(\d{4})'
     match = re.search(padrao_mes_ano, texto_pagina, re.IGNORECASE)
     if match:
@@ -89,16 +79,10 @@ def extrair_mes_ano_do_texto(texto_pagina):
                         if num == v and len(nome_completo) > 3:
                             mes_padrao = nome_completo
                             break
-                return f"{mes_padrao} {ano}", ano  # Agora retorna uma tupla
-
-    logger.warning("Mês/Ano não encontrado no texto da página.")
+                return f"{mes_padrao} {ano}", ano
     return "Período não identificado", None
 
 def extrair_remuneracao_do_pdf(texto_pagina):
-    """
-    Tenta extrair a remuneração bruta do beneficiário do PDF.
-    Esta função foi ajustada para buscar o "TOTAL DE VANTAGENS"
-    """
     padrao_remuneracao = r'TOTAL DE VANTAGENS\s*(\d{1,3}(?:[\.\s]?\d{3})*(?:[.,]\d{2})|\d+[.,]\d{2})'
     match = re.search(padrao_remuneracao, texto_pagina, re.IGNORECASE)
     if match:
@@ -106,19 +90,13 @@ def extrair_remuneracao_do_pdf(texto_pagina):
         try:
             return float(valor_str)
         except ValueError:
-            logger.warning(f"Erro ao converter valor de remuneração: {match.group(1)}")
             return None
-    logger.info("TOTAL DE VANTAGENS não encontrado nesta página.")
     return None
 
 def processar_pdf(caminho_pdf):
-    """
-    Processa o PDF para extrair valores e o Mês/Ano do conteúdo.
-    Retorna uma lista de tuplas: [(mes_ano, dicionario_valores), ...] ou [] em caso de erro.
-    """
     try:
         doc = fitz.open(caminho_pdf)
-        resultados_por_pagina = []  # Lista para armazenar resultados de cada página
+        resultados_por_pagina = []
 
         CODIGOS = {
             '7033': 'titular',
@@ -134,186 +112,257 @@ def processar_pdf(caminho_pdf):
             '7090': 'parcela_risco',
             '7091': 'parcela_risco'
         }
-        campos_obrigatorios = [
-            'titular', 'conjuge', 'dependente', 'agregado_jovem',
-            'agregado_maior', 'plano_especial', 'coparticipacao',
-            'retroativo', 'parcela_risco'
-        ]
 
-        for page_num, page in enumerate(doc):
+        for page in doc:
             texto_pagina = page.get_text("text")
-            linhas = texto_pagina.split('\n')
-            logger.debug(f"Processando Página {page_num + 1} do arquivo {os.path.basename(caminho_pdf)}")
-
-            mes_ano_encontrado, ano_encontrado = extrair_mes_ano_do_texto(texto_pagina)
+            mes_ano, ano = extrair_mes_ano_do_texto(texto_pagina)
             remuneracao = extrair_remuneracao_do_pdf(texto_pagina)
-            logger.info(f"Mês/Ano encontrado para {os.path.basename(caminho_pdf)} (Página {page_num + 1}): {mes_ano_encontrado}")
 
-            valores = {campo: 0.0 for campo in campos_obrigatorios}  # Reinicia valores para cada página
+            valores = {
+                'titular': 0.0, 'conjuge': 0.0, 'dependente': 0.0,
+                'agregado_jovem': 0.0, 'agregado_maior': 0.0,
+                'plano_especial': 0.0, 'coparticipacao': 0.0,
+                'retroativo': 0.0, 'parcela_risco': 0.0
+            }
 
-            for i, linha in enumerate(linhas):
-                linha_strip = linha.strip()
+            for linha in texto_pagina.split('\n'):
+                linha = linha.strip()
+                codigo_match = re.match(r'^(\d{4})\b', linha)
+                codigo = codigo_match.group(1) if codigo_match else None
+                campo = CODIGOS.get(codigo) if codigo else None
 
-                codigo_match = re.match(r'^(\d{4})\b', linha_strip)
-                codigo_encontrado = None
-                campo_alvo = None
-
-                if codigo_match:
-                    codigo_encontrado = codigo_match.group(1)
-                    if codigo_encontrado in CODIGOS:
-                        campo_alvo = CODIGOS[codigo_encontrado]
-
-                if not campo_alvo:
+                if not campo:
                     if re.search(r'Assistência a Saúde|PLANO DE SAUDE DOS SERV', linha, re.IGNORECASE):
-                        campo_alvo = 'titular'
+                        campo = 'titular'
                     elif re.search(r'Planserv Especial|PLANSERV ESPECIAL', linha, re.IGNORECASE):
-                        campo_alvo = 'plano_especial'
+                        campo = 'plano_especial'
                     elif re.search(r'Planserv Agregado Jovem', linha, re.IGNORECASE):
-                        campo_alvo = 'agregado_jovem'
+                        campo = 'agregado_jovem'
                     elif re.search(r'CO-PARTICIPAÇÃO PLANSERV|coparticipacao', linha, re.IGNORECASE):
-                        campo_alvo = 'coparticipacao'
+                        campo = 'coparticipacao'
 
-                if campo_alvo:
-                    valor_linha = extrair_valor_linha(linha)
-                    if valor_linha > 0:
-                        valores[campo_alvo] += valor_linha
-                        logger.debug(f"'{campo_alvo}' (Cod: {codigo_encontrado if codigo_encontrado else 'Texto'}) - Valor {valor_linha} encontrado na mesma linha.")
-                    else:
-                        for offset in range(1, 4):
-                            if i + offset < len(linhas):
-                                valor_prox = extrair_valor_linha(linhas[i + offset])
-                                if valor_prox > 0:
-                                    valores[campo_alvo] += valor_prox
-                                    logger.debug(f"'{campo_alvo}' (Cod: {codigo_encontrado if codigo_encontrado else 'Texto'}) - Valor {valor_prox} encontrado na linha +{offset}.")
-                                    break
+                if campo:
+                    valor = extrair_valor_linha(linha)
+                    if valor > 0:
+                        valores[campo] += valor
 
             resultados_por_pagina.append({
-                'mes_ano': mes_ano_encontrado,
-                'ano': ano_encontrado,
+                'mes_ano': mes_ano,
+                'ano': ano,
                 'remuneracao': remuneracao,
                 'valores': valores
-            })  # Adiciona resultado da página à lista
+            })
 
         return resultados_por_pagina
 
     except Exception as e:
-        logger.error(f"Erro ao processar PDF {caminho_pdf}: {str(e)}", exc_info=True)
-        return []  # Retorna uma lista vazia em caso de erro
+        logger.error(f"Erro ao processar PDF {caminho_pdf}: {str(e)}")
+        return []
 
-# Rota Index (igual)
+def calcular_contribuicoes_esperadas(valor_titular: float, ano: int, familia: GrupoFamiliar) -> Dict:
+    contribuicoes = familia.calcular_contribuicoes(ano)
+    valor_agregado_jovem = VALORES_AGREGADOS['agregado_jovem'].get(str(ano), VALORES_AGREGADOS['agregado_jovem']['default'])
+    
+    return {
+        'titular': valor_titular * contribuicoes['titular'],
+        'conjuge': (valor_titular * 0.5) * contribuicoes['conjuge'],
+        'dependente': (valor_titular * 0.22) * contribuicoes['dependente'],
+        'agregado_jovem': valor_agregado_jovem * contribuicoes['agregado_jovem'],
+        'agregado_maior': valor_titular * contribuicoes['agregado_maior'],
+        'parcelas_risco': contribuicoes['parcelas_risco']
+    }
+
+def verificar_consistencia(valores_reais: Dict, valores_esperados: Dict, mes_ano: str) -> Dict:
+    inconsistencias = {}
+    for campo in ['titular', 'conjuge', 'dependente', 'agregado_jovem', 'agregado_maior']:
+        real = valores_reais.get(campo, 0)
+        esperado = valores_esperados.get(campo, 0)
+        if esperado > 0 and abs(real - esperado) > (esperado * 0.05):
+            inconsistencias[campo] = {
+                'real': real,
+                'esperado': esperado,
+                'diferenca': real - esperado,
+                'mes_ano': mes_ano
+            }
+    return inconsistencias
+
 @app.route('/')
 def index():
     session.clear()
     return render_template('index.html')
 
-# Rota Upload MODIFICADA para agrupar por ano
+@app.route('/familia', methods=['GET', 'POST'])
+def cadastrar_familia():
+    if request.method == 'POST':
+        familia = GrupoFamiliar()
+        errors = []
+        
+        # Processar titular
+        if not familia.adicionar_membro('titular', request.form['titular_nascimento'], 'titular_risco' in request.form):
+            errors.append("Data de nascimento do titular inválida")
+        
+        # Processar cônjuge
+        if request.form.get('conjuge_nascimento'):
+            if not familia.adicionar_membro('conjuge', request.form['conjuge_nascimento'], 'conjuge_risco' in request.form):
+                errors.append("Data de nascimento do cônjuge inválida")
+        
+        # Processar dependentes
+        for i in range(1, int(request.form.get('num_dependentes', 0)) + 1):
+            if request.form.get(f'dependente_{i}_nascimento'):
+                if not familia.adicionar_membro('dependente', request.form[f'dependente_{i}_nascimento'], f'dependente_{i}_risco' in request.form):
+                    errors.append(f"Data do dependente {i} inválida")
+        
+        # Processar agregados
+        for tipo in ['jovem', 'maior']:
+            for i in range(1, int(request.form.get(f'num_agregados_{tipo}', 0)) + 1):
+                if request.form.get(f'agregado_{tipo}_{i}_nascimento'):
+                    if not familia.adicionar_membro(f'agregado_{tipo}', request.form[f'agregado_{tipo}_{i}_nascimento'], f'agregado_{tipo}_{i}_risco' in request.form):
+                        errors.append(f"Data do agregado {tipo} {i} inválida")
+        
+        if not errors:
+            session['familia'] = familia.__dict__
+            flash('Família cadastrada com sucesso!', 'success')
+            return redirect(url_for('index'))
+        
+        for error in errors:
+            flash(error, 'error')
+    
+    return render_template('familia.html')
+
 @app.route('/upload', methods=['POST'])
 def upload():
     if 'files' not in request.files:
-        flash('Nenhum arquivo selecionado')
+        flash('Nenhum arquivo selecionado', 'error')
         return redirect(url_for('index'))
 
-    files = request.files.getlist('files')
-    if not files or all(f.filename == '' for f in files):
-        flash('Nenhum arquivo selecionado')
+    if 'familia' not in session:
+        flash('Cadastre os dados familiares antes de enviar contracheques', 'error')
+        return redirect(url_for('cadastrar_familia'))
+
+    files = [f for f in request.files.getlist('files') if f.filename != '' and allowed_file(f.filename)]
+    if not files:
+        flash('Nenhum arquivo PDF válido selecionado', 'error')
         return redirect(url_for('index'))
 
-    # Estrutura para agrupar por ano
     resultados_por_ano = {}
     erros = []
-    arquivos_processados_count = 0  # Contador de arquivos (não páginas)
-
-    campos_base = [  # Define os campos esperados na estrutura 'geral'
-        'titular', 'conjuge', 'dependente',
-        'agregado_jovem', 'agregado_maior',
-        'plano_especial', 'coparticipacao',
-        'retroativo', 'parcela_risco'
-    ]
+    familia = GrupoFamiliar()
+    familia.__dict__ = session['familia']
 
     for file in files:
-        if file.filename == '' or not allowed_file(file.filename):
-            continue
-
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        arquivo_teve_erro = False  # Flag para este arquivo específico
-
+        
         try:
             file.save(filepath)
-            logger.info(f"Arquivo salvo: {filepath}")
+            resultados = processar_pdf(filepath)
+            
+            if not resultados:
+                erros.append(f"{filename} - Não foi possível extrair dados")
+                continue
 
-            resultados_pagina = processar_pdf(filepath)  # Retorna lista de (mes_ano, valores_pagina)
+            for resultado in resultados:
+                ano = resultado['ano']
+                if not ano or len(ano) != 4:
+                    erros.append(f"{filename} - Ano inválido")
+                    continue
 
-            if resultados_pagina:
-                arquivos_processados_count += 1  # Conta o arquivo como processado se a função retornou algo
-                for resultado_pagina in resultados_pagina:
-                    mes_ano_str = resultado_pagina['mes_ano']
-                    ano_str = resultado_pagina['ano']
-                    remuneracao = resultado_pagina['remuneracao']
-                    valores_pagina = resultado_pagina['valores']
+                if ano not in resultados_por_ano:
+                    resultados_por_ano[ano] = {
+                        'geral': {
+                            'titular': 0.0, 'conjuge': 0.0, 'dependente': 0.0,
+                            'agregado_jovem': 0.0, 'agregado_maior': 0.0,
+                            'parcela_risco': 0.0, 'total': 0.0
+                        },
+                        'detalhes_mensais': []
+                    }
 
-                    if mes_ano_str != "Período não identificado" and ano_str is not None:
-                        try:
-                            ano = ano_str
-                            if not ano.isdigit() or len(ano) != 4:
-                                raise ValueError("Ano inválido extraído")
+                valores_esperados = calcular_contribuicoes_esperadas(
+                    resultado['valores']['titular'],
+                    int(ano),
+                    familia
+                )
 
-                            # Cria a entrada do ano se não existir
-                            if ano not in resultados_por_ano:
-                                resultados_por_ano[ano] = {
-                                    'geral': {campo: 0.0 for campo in campos_base},
-                                    'total_ano': 0.0,  # <-- Inicializa total_ano
-                                    'detalhes_mensais': []  # Mantém detalhes mensais aqui
-                                }
+                for campo in ['titular', 'conjuge', 'dependente', 'agregado_jovem', 'agregado_maior', 'parcela_risco']:
+                    resultados_por_ano[ano]['geral'][campo] += resultado['valores'].get(campo, 0)
+                
+                resultados_por_ano[ano]['geral']['total'] += sum(resultado['valores'].values())
 
-                            # Soma nos resultados gerais do ano
-                            total_pagina = 0.0
-                            for campo, valor in valores_pagina.items():
-                                if campo in resultados_por_ano[ano]['geral']:
-                                    resultados_por_ano[ano]['geral'][campo] += valor
-                                    total_pagina += valor  # Soma para o total da página/mês
-                                else:
-                                    logger.warning(f"Campo '{campo}' da pág/mês {mes_ano_str} (arq: {filename}) não encontrado na estrutura do ano {ano}.")
+                resultados_por_ano[ano]['detalhes_mensais'].append({
+                    'mes': resultado['mes_ano'],
+                    'valores': resultado['valores'],
+                    'valores_esperados': valores_esperados,
+                    'inconsistencias': verificar_consistencia(
+                        resultado['valores'],
+                        valores_esperados,
+                        resultado['mes_ano']
+                    ),
+                    'remuneracao': resultado['remuneracao']
+                })
 
-                            # Acumula o total da página/mês no total_ano
-                            resultados_por_ano[ano]['total_ano'] += total_pagina  # <-- Acumula o total do ano
-
-                            # Adiciona aos detalhes mensais (como estava)
-                            resultados_por_ano[ano]['detalhes_mensais'].append({
-                                'mes': mes_ano_str,
-                                'arquivo': filename,  # Pode ser útil saber qual arquivo gerou qual mês
-                                'remuneracao': remuneracao,
-                                'valores': valores_pagina
-                            })
-
-                        except (IndexError, ValueError) as e:
-                            logger.error(f"Não foi possível extrair/validar o ano de '{mes_ano_str}' (arq: '{filename}'). Erro: {e}")
-                            if not arquivo_teve_erro:  # Adiciona erro apenas uma vez por arquivo
-                                erros.append(f"{filename} (dados inválidos: {mes_ano_str})")
-                                arquivo_teve_erro = True
-                    else:
-                        logger.warning(f"Mês/Ano não identificado em uma página do arquivo: {filename}")
-                        if not arquivo_teve_erro:  # Adiciona erro apenas uma vez por arquivo
-                            erros.append(f"{filename} (período não identificado)")
-                            arquivo_teve_erro = True
-            else:
-                # Se processar_pdf retornou vazio, mas não lançou exceção, consideramos erro de processamento
-                logger.error(f"Falha ao processar PDF (retorno vazio): {filename}")
-                if not arquivo_teve_erro:
-                    erros.append(f"{filename} (falha no processamento)")
-                    arquivo_teve_erro = True
-
-            # Opcional: Remover o arquivo após processamento
+        except Exception as e:
+            logger.error(f"Erro processando {filename}: {str(e)}")
+            erros.append(f"{filename} - Erro no processamento")
+        finally:
             if os.path.exists(filepath):
                 try:
                     os.remove(filepath)
-                    logger.info(f"Arquivo removido: {filepath}")
-                except OSError as e:
-                    logger.error(f"Erro ao remover arquivo {filepath}: {e}")
+                except Exception:
+                    pass
 
-        except Exception as e:
-            logger.error(f"Erro GERAL no loop de upload para o arquivo {filename}: {str(e)}", exc_info=True)
-            if not arquivo_teve_erro:  # Adiciona erro apenas uma vez por arquivo
-                erros.append(f"{filename} (erro inesperado)")
-            # Tenta remover arquivo mesmo com erro
-            if os.path.
+    if not resultados_por_ano:
+        flash('Nenhum dado válido extraído dos arquivos', 'error')
+        return redirect(url_for('index'))
+
+    session['resultados_por_ano'] = resultados_por_ano
+    
+    if erros:
+        flash(f"Processamento completo com {len(erros)} erro(s)", 'warning')
+    
+    return redirect(url_for('mostrar_resultados'))
+
+@app.route('/resultados')
+def mostrar_resultados():
+    if 'resultados_por_ano' not in session:
+        flash('Nenhum resultado disponível', 'error')
+        return redirect(url_for('index'))
+    
+    familia = GrupoFamiliar()
+    if 'familia' in session:
+        familia.__dict__ = session['familia']
+    
+    return render_template(
+        'resultados.html',
+        anos=sorted(session['resultados_por_ano'].keys(), reverse=True),
+        resultados=session['resultados_por_ano'],
+        familia=familia
+    )
+
+@app.route('/analise/<ano>')
+def analise_ano(ano):
+    if 'resultados_por_ano' not in session or ano not in session['resultados_por_ano']:
+        flash('Dados não encontrados', 'error')
+        return redirect(url_for('mostrar_resultados'))
+    
+    dados_ano = session['resultados_por_ano'][ano]
+    familia = GrupoFamiliar()
+    
+    if 'familia' in session:
+        familia.__dict__ = session['familia']
+    
+    resumo = {
+        'total_cobrado': sum(m['valores']['titular'] for m in dados_ano['detalhes_mensais']),
+        'total_esperado': sum(m['valores_esperados']['titular'] for m in dados_ano['detalhes_mensais']),
+        'inconsistencias': sum(len(m['inconsistencias']) for m in dados_ano['detalhes_mensais'])
+    }
+    
+    return render_template(
+        'analise.html',
+        ano=ano,
+        dados_ano=dados_ano,
+        familia=familia,
+        resumo=resumo
+    )
+
+if __name__ == '__main__':
+    app.run(debug=True)
