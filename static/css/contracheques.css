@@ -132,3 +132,39 @@
         padding: 10px 20px;
     }
 }
+/* Borda Animada - Mesmo estilo do index.html */
+.borda-animada {
+    position: relative;
+    border-radius: 15px;
+    overflow: hidden;
+    padding: 3px;
+    background: linear-gradient(
+        var(--gradient-angle),
+        var(--maida-azul),
+        var(--maida-rosa),
+        var(--maida-amarelo),
+        var(--maida-rosa),
+        var(--maida-azul)
+    );
+    animation: fluxoContinuoBorda 8s linear infinite;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.borda-animada .content-box {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    z-index: 1;
+}
+
+@keyframes fluxoContinuoBorda {
+    0% { --gradient-angle: 0deg; }
+    100% { --gradient-angle: 360deg; }
+}
+
+/* Garantir que a animação funcione */
+@property --gradient-angle {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
