@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -15,7 +15,7 @@
   <main>
     <div class="borda-animada">
       <div class="content-box">
-        <h1><strong>Calculadora de Mensalidades</strong></h1>
+        <h1>Calculadora de Mensalidades</h1>
         
         <!-- Formulário de Grupo Familiar -->
         <form id="familia-form" method="POST" action="/familia">
@@ -23,27 +23,27 @@
             <label for="tamanho-familia">Tamanho do Grupo Familiar:</label>
             <select id="tamanho-familia" name="tamanho_familia" required>
               <option value="" disabled selected>Selecione a quantidade</option>
-               <option value="1">1 - Apenas titular</option>
-               <option value="2">2 - Titular + 1</option>
-               <option value="3">3 - Titular + 2</option>
-               <option value="4">4 - Titular + 3</option>
-               <option value="5">5 - Titular + 4</option>
-               <option value="6">6 - Titular + 5</option>
-               <option value="7">7 - Titular + 6</option>
-               <option value="8">8 - Titular + 7</option>
-               <option value="9">9 - Titular + 8</option>
-               <option value="10">10 - Titular + 9</option>
-               <option value="11">11 - Titular + 10</option>
-               <option value="12">12 - Titular + 11</option>
-               <option value="13">13 - Titular + 12</option>
-               <option value="14">14 - Titular + 13</option>
-               <option value="15">15 - Titular + 14</option>
-               <option value="16">16 - Titular + 15</option>
-               <option value="17">17 - Titular + 16</option>
-               <option value="18">18 - Titular + 17</option>
-               <option value="19">19 - Titular + 18</option>
-               <option value="20">20 - Titular + 19</option>
-               <option value="21">21 - Titular + 20</option>
+              <option value="1">1 - Apenas titular</option>
+              <option value="2">2 - Titular + 1</option>
+              <option value="3">3 - Titular + 2</option>
+              <option value="4">4 - Titular + 3</option>
+              <option value="5">5 - Titular + 4</option>
+              <option value="6">6 - Titular + 5</option>
+              <option value="7">7 - Titular + 6</option>
+              <option value="8">8 - Titular + 7</option>
+              <option value="9">9 - Titular + 8</option>
+              <option value="10">10 - Titular + 9</option>
+              <option value="11">11 - Titular + 10</option>
+              <option value="12">12 - Titular + 11</option>
+              <option value="13">13 - Titular + 12</option>
+              <option value="14">14 - Titular + 13</option>
+              <option value="15">15 - Titular + 14</option>
+              <option value="16">16 - Titular + 15</option>
+              <option value="17">17 - Titular + 16</option>
+              <option value="18">18 - Titular + 17</option>
+              <option value="19">19 - Titular + 18</option>
+              <option value="20">20 - Titular + 19</option>
+              <option value="21">21 - Titular + 20</option>
             </select>
           </div>
 
@@ -65,7 +65,7 @@
           </div>
         </form>
 
-        <!-- Upload de Arquivos (mantido do original) -->
+        <!-- Upload de Arquivos -->
         <div id="upload-container" class="hidden">
           <input type="file" id="file-upload" multiple hidden aria-label="Selecionar arquivos" />
           <label for="file-upload" class="upload-btn">📁 Escolher Arquivos</label>
@@ -92,21 +92,27 @@
     <div class="scrollbar-thumb" id="scrollThumb"></div>
   </div>
 
+  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+  
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Controle do formulário de família
+      // Elementos do DOM
       const tamanhoFamilia = document.getElementById('tamanho-familia');
       const conjugeContainer = document.getElementById('conjuge-container');
       const dependentesContainer = document.getElementById('dependentes-container');
       const uploadContainer = document.getElementById('upload-container');
       const dependentesLista = document.getElementById('dependentes-lista');
       const btnAdicionarDependente = document.getElementById('adicionar-dependente');
+      const fileInput = document.getElementById('file-upload');
+      const fileNameText = document.getElementById('file-name');
+      const processBtn = document.querySelector('#upload-container .process-btn');
+      const progressBar = document.getElementById('upload-progress');
 
-      // Mostrar/ocultar campos conforme seleção
+      // Atualizar interface quando o tamanho da família muda
       tamanhoFamilia.addEventListener('change', function() {
         const qtd = parseInt(this.value);
+        const maxDependentes = Math.max(0, qtd - 1); // Subtrai o titular
         
-        // Mostrar opção de cônjuge se grupo familiar > 1
         if (qtd > 1) {
           conjugeContainer.classList.remove('hidden');
           dependentesContainer.classList.remove('hidden');
@@ -117,12 +123,22 @@
           uploadContainer.classList.remove('hidden');
         }
         
-        // Limpar dependentes ao mudar tamanho
+        // Limpar e atualizar dependentes
         dependentesLista.innerHTML = '';
+        btnAdicionarDependente.disabled = maxDependentes === 0;
       });
 
       // Adicionar novo dependente
       btnAdicionarDependente.addEventListener('click', function() {
+        const qtd = parseInt(tamanhoFamilia.value);
+        const maxDependentes = qtd - 1;
+        const currentDependentes = document.querySelectorAll('.dependente-item').length;
+        
+        if (currentDependentes >= maxDependentes) {
+          alert(`Você pode adicionar no máximo ${maxDependentes} dependentes.`);
+          return;
+        }
+        
         const dependenteId = Date.now();
         const dependenteHTML = `
           <div class="dependente-item" id="dependente-${dependenteId}">
@@ -154,19 +170,16 @@
         `;
         
         dependentesLista.insertAdjacentHTML('beforeend', dependenteHTML);
+        btnAdicionarDependente.disabled = currentDependentes + 1 >= maxDependentes;
         
         // Adicionar evento de remoção
         document.querySelector(`button[data-id="${dependenteId}"]`).addEventListener('click', function() {
           document.getElementById(`dependente-${this.dataset.id}`).remove();
+          btnAdicionarDependente.disabled = false;
         });
       });
 
-      // Código original de upload (mantido)
-      const fileInput = document.getElementById('file-upload');
-      const fileNameText = document.getElementById('file-name');
-      const processBtn = document.querySelector('.process-btn');
-      const progressBar = document.getElementById('upload-progress');
-
+      // Lógica de upload de arquivos
       function isPDF(file) {
         return file.type === 'application/pdf';
       }
@@ -232,86 +245,6 @@
         }
       });
     });
-
-    // Adicione esta validação no evento de change do tamanhoFamilia
-tamanhoFamilia.addEventListener('change', function() {
-  const qtd = parseInt(this.value);
-  const maxDependentes = qtd - 1; // Subtrai o titular
-  
-  // Mostrar opção de cônjuge se grupo familiar > 1
-  if (qtd > 1) {
-    conjugeContainer.classList.remove('hidden');
-    dependentesContainer.classList.remove('hidden');
-    uploadContainer.classList.add('hidden');
-    
-    // Limitar número de dependentes que podem ser adicionados
-    const currentDependentes = document.querySelectorAll('.dependente-item').length;
-    btnAdicionarDependente.disabled = currentDependentes >= maxDependentes;
-  } else {
-    conjugeContainer.classList.add('hidden');
-    dependentesContainer.classList.add('hidden');
-    uploadContainer.classList.remove('hidden');
-  }
-  
-  // Limpar dependentes ao mudar tamanho
-  dependentesLista.innerHTML = '';
-});
-
-// Modifique o evento de adicionar dependente
-btnAdicionarDependente.addEventListener('click', function() {
-  const qtd = parseInt(tamanhoFamilia.value);
-  const maxDependentes = qtd - 1;
-  const currentDependentes = document.querySelectorAll('.dependente-item').length;
-  
-  if (currentDependentes >= maxDependentes) {
-    alert(`Você já adicionou o número máximo de ${maxDependentes} dependentes para este grupo familiar.`);
-    return;
-  }
-  
-  const dependenteId = Date.now();
-  const dependenteHTML = `
-    <div class="dependente-item" id="dependente-${dependenteId}">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="tipo-${dependenteId}">Tipo:</label>
-          <select id="tipo-${dependenteId}" name="tipo_${dependenteId}" required>
-            <option value="" disabled selected>Selecione</option>
-            <option value="filho">Filho(a)</option>
-            <option value="enteado">Enteado(a)</option>
-            <option value="neto">Neto(a)</option>
-            <option value="tutelado">Tutelado(a)</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="nascimento-${dependenteId}">Data Nascimento:</label>
-          <input type="date" id="nascimento-${dependenteId}" name="nascimento_${dependenteId}" required>
-        </div>
-        
-        <div class="form-group">
-          <input type="checkbox" id="risco-${dependenteId}" name="risco_${dependenteId}">
-          <label for="risco-${dependenteId}">Parcela de Risco</label>
-        </div>
-        
-        <button type="button" class="btn-remover" data-id="${dependenteId}">×</button>
-      </div>
-    </div>
-  `;
-  
-  dependentesLista.insertAdjacentHTML('beforeend', dependenteHTML);
-  
-  // Atualizar estado do botão
-  const newCount = document.querySelectorAll('.dependente-item').length;
-  btnAdicionarDependente.disabled = newCount >= maxDependentes;
-  
-  // Adicionar evento de remoção
-  document.querySelector(`button[data-id="${dependenteId}"]`).addEventListener('click', function() {
-    document.getElementById(`dependente-${this.dataset.id}`).remove();
-    btnAdicionarDependente.disabled = false;
-  });
-});
   </script>
-
-  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 </body>
 </html>
