@@ -214,19 +214,23 @@ def cadastrar_familia():
             else:
                 errors.append("Data de nascimento do cônjuge é obrigatória")
         
-        # Processar dependentes
+        # Processar dependentes (até 20)
+        dependentes_count = 0
         for key, value in request.form.items():
             if key.startswith('tipo_'):
+                dependentes_count += 1
+                if dependentes_count > 20:
+                    errors.append("Número máximo de dependentes é 20")
+                    break
+                    
                 prefix = key.split('_')[1]
                 tipo = value
                 nascimento = request.form.get(f'nascimento_{prefix}')
                 risco = f'risco_{prefix}' in request.form
                 
-                # Mapeia tipo para a categoria correta
                 if tipo in ['filho', 'enteado', 'tutelado']:
                     categoria = 'dependente'
                 elif tipo == 'neto':
-                    # Verifica idade para determinar se é jovem ou maior
                     try:
                         from datetime import datetime
                         nasc_date = datetime.strptime(nascimento, '%Y-%m-%d')
