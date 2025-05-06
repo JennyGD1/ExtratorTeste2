@@ -1,0 +1,134 @@
+/* contracheques.css */
+.page-contracheques {
+    position: relative;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4f0fb 100%);
+    color: #2c3e50;
+    padding: 2rem;
+}
+
+.page-contracheques .content-box {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 2.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.page-contracheques h1 {
+    color: #1a4b8c;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: 600;
+}
+
+/* Resumo da Família */
+.resumo-familia {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid #1a4b8c;
+}
+
+.resumo-familia h3 {
+    color: #1a4b8c;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.resumo-familia p {
+    margin: 0.5rem 0;
+    color: #2c3e50;
+}
+
+/* Estilo do Upload */
+.upload-btn {
+    display: inline-block;
+    background-color: #FFD700; /* Amarelo */
+    color: #1a4b8c; /* Azul */
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    text-align: center;
+    margin: 1rem 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.upload-btn:hover {
+    background-color: #1a4b8c; /* Azul */
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    border-color: #FFD700; /* Borda amarela no hover */
+}
+
+#file-name {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+/* Botão de Processar */
+.process-btn {
+    background-color: #1a4b8c; /* Azul */
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    margin: 2rem auto 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.process-btn:hover {
+    background-color: #153b6d;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(26, 75, 140, 0.2);
+}
+
+.process-btn:active {
+    transform: translateY(0);
+}
+
+/* Efeito de Carregamento */
+.process-btn .spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .page-contracheques .content-box {
+        padding: 1.5rem;
+    }
+    
+    .upload-btn, .process-btn {
+        padding: 10px 20px;
+    }
+}
