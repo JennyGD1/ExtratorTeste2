@@ -10,23 +10,27 @@ class MembroFamilia:
     id: int = 0  # Para identificação única
 
 class GrupoFamiliar:
-    def __init__(self):
-        self.membros = []
-        self._id_counter = 1
+   def __init__(self):
+        self.membros = {
+            'titular': [],
+            'conjuge': [],
+            'dependente': [],
+            'agregado_jovem': [],
+            'agregado_maior': []
+        }
     
-    def adicionar_membro(self, tipo: str, data_nascimento: str, parcela_risco: bool = False):
+    def adicionar_membro(self, tipo, data_nascimento, risco=False, data_exclusao=None):
         try:
-            nascimento = date.fromisoformat(data_nascimento)
-            membro = MembroFamilia(
-                tipo=tipo,
-                data_nascimento=nascimento,
-                parcela_risco=parcela_risco,
-                id=self._id_counter
-            )
-            self._id_counter += 1
-            self.membros.append(membro)
+            nasc = datetime.strptime(data_nascimento, '%Y-%m-%d').date()
+            exclusao = datetime.strptime(data_exclusao, '%Y-%m-%d').date() if data_exclusao else None
+            
+            self.membros[tipo].append({
+                'data_nascimento': nasc,
+                'risco': risco,
+                'data_exclusao': exclusao
+            })
             return True
-        except ValueError:
+        except:
             return False
     
     def contar_por_tipo(self, tipo: str, ano: int = None) -> int:
