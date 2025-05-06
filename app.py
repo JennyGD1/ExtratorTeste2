@@ -197,27 +197,47 @@ def cadastrar_familia():
         familia = GrupoFamiliar()
         errors = []
         
-        # Processar titular
-        if not familia.adicionar_membro('titular', request.form['titular_nascimento'], 'titular_risco' in request.form):
-            errors.append("Data de nascimento do titular inválida")
+        # Processar titular (obrigatório)
+        titular_nasc = request.form.get('titular_nascimento')
+        if not titular_nasc:
+            errors.append("Data de nascimento do titular é obrigatória")
+        else:
+            if not familia.adicionar_membro('titular', titular_nasc, False):
+                errors.append("Data de nascimento do titular inválida")
         
-        # Processar cônjuge
-        if request.form.get('conjuge_nascimento'):
-            if not familia.adicionar_membro('conjuge', request.form['conjuge_nascimento'], 'conjuge_risco' in request.form):
-                errors.append("Data de nascimento do cônjuge inválida")
+        # Processar cônjuge (se marcado)
+        if 'incluir_conjuge' in request.form:
+            conjuge_nasc = request.form.get('conjuge_nascimento')
+            if conjuge_nasc:
+                if not familia.adicionar_membro('conjuge', conjuge_nasc, 'conjuge_risco' in request.form):
+                    errors.append("Data de nascimento do cônjuge inválida")
+            else:
+                errors.append("Data de nascimento do cônjuge é obrigatória")
         
         # Processar dependentes
-        for i in range(1, int(request.form.get('num_dependentes', 0)) + 1):
-            if request.form.get(f'dependente_{i}_nascimento'):
-                if not familia.adicionar_membro('dependente', request.form[f'dependente_{i}_nascimento'], f'dependente_{i}_risco' in request.form):
-                    errors.append(f"Data do dependente {i} inválida")
-        
-        # Processar agregados
-        for tipo in ['jovem', 'maior']:
-            for i in range(1, int(request.form.get(f'num_agregados_{tipo}', 0)) + 1):
-                if request.form.get(f'agregado_{tipo}_{i}_nascimento'):
-                    if not familia.adicionar_membro(f'agregado_{tipo}', request.form[f'agregado_{tipo}_{i}_nascimento'], f'agregado_{tipo}_{i}_risco' in request.form):
-                        errors.append(f"Data do agregado {tipo} {i} inválida")
+        for key, value in request.form.items():
+            if key.startswith('tipo_'):
+                prefix = key.split('_')[1]
+                tipo = value
+                nascimento = request.form.get(f'nascimento_{prefix}')
+                risco = f'risco_{prefix}' in request.form
+                
+                # Mapeia tipo para a categoria correta
+                if tipo in ['filho', 'enteado', 'tutelado']:
+                    categoria = 'dependente'
+                elif tipo == 'neto':
+                    # Verifica idade para determinar se é jovem ou maior
+                    try:
+                        from datetime import datetime
+                        nasc_date = datetime.strptime(nascimento, '%Y-%m-%d')
+                        idade = datetime.now().year - nasc_date.year
+                        categoria = 'agregado_jovem' if idade < 24 else 'agregado_maior'
+                    except:
+                        errors.append(f"Data de nascimento inválida para {tipo}")
+                        continue
+                
+                if not familia.adicionar_membro(categoria, nascimento, risco):
+                    errors.append(f"Data de nascimento inválida para {tipo}")
         
         if not errors:
             session['familia'] = familia.__dict__
@@ -227,8 +247,8 @@ def cadastrar_familia():
         for error in errors:
             flash(error, 'error')
     
-    return render_template('familia.html')
-
+    return render_template('index.html')
+    
 @app.route('/upload', methods=['POST'])
 def upload():
     if 'files' not in request.files:
