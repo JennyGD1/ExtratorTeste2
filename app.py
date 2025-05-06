@@ -1,4 +1,3 @@
-
 import fitz  # PyMuPDF
 import re
 import os
@@ -9,11 +8,12 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
+from tabelas_planserv import carregar_tabelas, obter_valor_por_faixa, setup_logging as setup_tabelas_logging, FaixaContribuicao, TabelaPlanserv
 
 app = Flask(__name__)
 app.secret_key = 'sua-chave-secreta-aqui'
 
-# Configuração do logger (igual ao anterior)
+# Configuração do logger para a aplicação
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -23,6 +23,15 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+# Configurar o logger para tabelas_planserv (se desejar um log separado)
+# setup_tabelas_logging()
+logger_tabelas = logging.getLogger('tabelas_planserv')
+logger_tabelas.setLevel(logging.INFO)
+handler_tabelas = logging.StreamHandler()
+formatter_tabelas = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler_tabelas.setFormatter(formatter_tabelas)
+logger_tabelas.addHandler(handler_tabelas)
 
 MESES_ORDEM = {
     'Janeiro': 1, 'Fevereiro': 2, 'Março': 3, 'Abril': 4,
@@ -39,7 +48,13 @@ app.config.update({
     'UPLOAD_FOLDER': UPLOAD_FOLDER,
     'MAX_CONTENT_LENGTH': 100 * 1024 * 1024,
     'ALLOWED_EXTENSIONS': {'pdf'},
+    'TABELAS_PLANSERV': {}  # Dicionário para armazenar as tabelas carregadas
 })
+
+# Carregar as tabelas Planserv ao iniciar o aplicativo
+with app.app_context():
+    app.config['TABELAS_PLANSERV'] = carregar_tabelas('tabelas')
+    logger.info(f"Tabelas Planserv carregadas: Anos disponíveis - {list(app.config['TABELAS_PLANSERV'].keys())}")
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -79,6 +94,23 @@ def extrair_mes_ano_do_texto(texto_pagina):
     logger.warning("Mês/Ano não encontrado no texto da página.")
     return "Período não identificado", None
 
+def extrair_remuneracao_do_pdf(texto_pagina):
+    """
+    Tenta extrair a remuneração bruta do beneficiário do PDF.
+    Esta função foi ajustada para buscar o "TOTAL DE VANTAGENS"
+    """
+    padrao_remuneracao = r'TOTAL DE VANTAGENS\s*(\d{1,3}(?:[\.\s]?\d{3})*(?:[.,]\d{2})|\d+[.,]\d{2})'
+    match = re.search(padrao_remuneracao, texto_pagina, re.IGNORECASE)
+    if match:
+        valor_str = match.group(1).replace('.', '').replace(',', '.')
+        try:
+            return float(valor_str)
+        except ValueError:
+            logger.warning(f"Erro ao converter valor de remuneração: {match.group(1)}")
+            return None
+    logger.info("TOTAL DE VANTAGENS não encontrado nesta página.")
+    return None
+
 def processar_pdf(caminho_pdf):
     """
     Processa o PDF para extrair valores e o Mês/Ano do conteúdo.
@@ -114,6 +146,7 @@ def processar_pdf(caminho_pdf):
             logger.debug(f"Processando Página {page_num + 1} do arquivo {os.path.basename(caminho_pdf)}")
 
             mes_ano_encontrado, ano_encontrado = extrair_mes_ano_do_texto(texto_pagina)
+            remuneracao = extrair_remuneracao_do_pdf(texto_pagina)
             logger.info(f"Mês/Ano encontrado para {os.path.basename(caminho_pdf)} (Página {page_num + 1}): {mes_ano_encontrado}")
 
             valores = {campo: 0.0 for campo in campos_obrigatorios}  # Reinicia valores para cada página
@@ -154,7 +187,12 @@ def processar_pdf(caminho_pdf):
                                     logger.debug(f"'{campo_alvo}' (Cod: {codigo_encontrado if codigo_encontrado else 'Texto'}) - Valor {valor_prox} encontrado na linha +{offset}.")
                                     break
 
-            resultados_por_pagina.append((mes_ano_encontrado, valores))  # Adiciona resultado da página à lista
+            resultados_por_pagina.append({
+                'mes_ano': mes_ano_encontrado,
+                'ano': ano_encontrado,
+                'remuneracao': remuneracao,
+                'valores': valores
+            })  # Adiciona resultado da página à lista
 
         return resultados_por_pagina
 
@@ -183,14 +221,14 @@ def upload():
     # Estrutura para agrupar por ano
     resultados_por_ano = {}
     erros = []
-    arquivos_processados_count = 0 # Contador de arquivos (não páginas)
+    arquivos_processados_count = 0  # Contador de arquivos (não páginas)
 
-    campos_base = [ # Define os campos esperados na estrutura 'geral'
-            'titular', 'conjuge', 'dependente',
-            'agregado_jovem', 'agregado_maior',
-            'plano_especial', 'coparticipacao',
-            'retroativo', 'parcela_risco'
-        ]
+    campos_base = [  # Define os campos esperados na estrutura 'geral'
+        'titular', 'conjuge', 'dependente',
+        'agregado_jovem', 'agregado_maior',
+        'plano_especial', 'coparticipacao',
+        'retroativo', 'parcela_risco'
+    ]
 
     for file in files:
         if file.filename == '' or not allowed_file(file.filename):
@@ -198,21 +236,25 @@ def upload():
 
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        arquivo_teve_erro = False # Flag para este arquivo específico
+        arquivo_teve_erro = False  # Flag para este arquivo específico
 
         try:
             file.save(filepath)
             logger.info(f"Arquivo salvo: {filepath}")
 
-            resultados_pagina = processar_pdf(filepath) # Retorna lista de (mes_ano, valores_pagina)
+            resultados_pagina = processar_pdf(filepath)  # Retorna lista de (mes_ano, valores_pagina)
 
             if resultados_pagina:
-                arquivos_processados_count += 1 # Conta o arquivo como processado se a função retornou algo
-                for mes_ano_str, valores_pagina in resultados_pagina:
-                    if mes_ano_str != "Período não identificado":
+                arquivos_processados_count += 1  # Conta o arquivo como processado se a função retornou algo
+                for resultado_pagina in resultados_pagina:
+                    mes_ano_str = resultado_pagina['mes_ano']
+                    ano_str = resultado_pagina['ano']
+                    remuneracao = resultado_pagina['remuneracao']
+                    valores_pagina = resultado_pagina['valores']
+
+                    if mes_ano_str != "Período não identificado" and ano_str is not None:
                         try:
-                            # Extrai o ano da string "Mês Ano"
-                            ano = mes_ano_str.split()[-1]
+                            ano = ano_str
                             if not ano.isdigit() or len(ano) != 4:
                                 raise ValueError("Ano inválido extraído")
 
@@ -220,8 +262,8 @@ def upload():
                             if ano not in resultados_por_ano:
                                 resultados_por_ano[ano] = {
                                     'geral': {campo: 0.0 for campo in campos_base},
-                                    'total_ano': 0.0, # <-- Inicializa total_ano
-                                    'detalhes_mensais': [] # Mantém detalhes mensais aqui
+                                    'total_ano': 0.0,  # <-- Inicializa total_ano
+                                    'detalhes_mensais': []  # Mantém detalhes mensais aqui
                                 }
 
                             # Soma nos resultados gerais do ano
@@ -229,159 +271,49 @@ def upload():
                             for campo, valor in valores_pagina.items():
                                 if campo in resultados_por_ano[ano]['geral']:
                                     resultados_por_ano[ano]['geral'][campo] += valor
-                                    total_pagina += valor # Soma para o total da página/mês
+                                    total_pagina += valor  # Soma para o total da página/mês
                                 else:
                                     logger.warning(f"Campo '{campo}' da pág/mês {mes_ano_str} (arq: {filename}) não encontrado na estrutura do ano {ano}.")
 
                             # Acumula o total da página/mês no total_ano
-                            resultados_por_ano[ano]['total_ano'] += total_pagina # <-- Acumula o total do ano
+                            resultados_por_ano[ano]['total_ano'] += total_pagina  # <-- Acumula o total do ano
 
                             # Adiciona aos detalhes mensais (como estava)
                             resultados_por_ano[ano]['detalhes_mensais'].append({
                                 'mes': mes_ano_str,
-                                'arquivo': filename, # Pode ser útil saber qual arquivo gerou qual mês
+                                'arquivo': filename,  # Pode ser útil saber qual arquivo gerou qual mês
+                                'remuneracao': remuneracao,
                                 'valores': valores_pagina
                             })
 
                         except (IndexError, ValueError) as e:
                             logger.error(f"Não foi possível extrair/validar o ano de '{mes_ano_str}' (arq: '{filename}'). Erro: {e}")
-                            if not arquivo_teve_erro: # Adiciona erro apenas uma vez por arquivo
+                            if not arquivo_teve_erro:  # Adiciona erro apenas uma vez por arquivo
                                 erros.append(f"{filename} (dados inválidos: {mes_ano_str})")
                                 arquivo_teve_erro = True
                     else:
                         logger.warning(f"Mês/Ano não identificado em uma página do arquivo: {filename}")
-                        if not arquivo_teve_erro: # Adiciona erro apenas uma vez por arquivo
-                             erros.append(f"{filename} (período não identificado)")
-                             arquivo_teve_erro = True
+                        if not arquivo_teve_erro:  # Adiciona erro apenas uma vez por arquivo
+                            erros.append(f"{filename} (período não identificado)")
+                            arquivo_teve_erro = True
             else:
-                 # Se processar_pdf retornou vazio, mas não lançou exceção, consideramos erro de processamento
-                 logger.error(f"Falha ao processar PDF (retorno vazio): {filename}")
-                 if not arquivo_teve_erro:
-                     erros.append(f"{filename} (falha no processamento)")
-                     arquivo_teve_erro = True
+                # Se processar_pdf retornou vazio, mas não lançou exceção, consideramos erro de processamento
+                logger.error(f"Falha ao processar PDF (retorno vazio): {filename}")
+                if not arquivo_teve_erro:
+                    erros.append(f"{filename} (falha no processamento)")
+                    arquivo_teve_erro = True
 
             # Opcional: Remover o arquivo após processamento
-            # try:
-            #     os.remove(filepath)
-            #     logger.info(f"Arquivo removido: {filepath}")
-            # except OSError as e:
-            #     logger.error(f"Erro ao remover arquivo {filepath}: {e}")
+            if os.path.exists(filepath):
+                try:
+                    os.remove(filepath)
+                    logger.info(f"Arquivo removido: {filepath}")
+                except OSError as e:
+                    logger.error(f"Erro ao remover arquivo {filepath}: {e}")
 
         except Exception as e:
             logger.error(f"Erro GERAL no loop de upload para o arquivo {filename}: {str(e)}", exc_info=True)
-            if not arquivo_teve_erro: # Adiciona erro apenas uma vez por arquivo
-                 erros.append(f"{filename} (erro inesperado)")
+            if not arquivo_teve_erro:  # Adiciona erro apenas uma vez por arquivo
+                erros.append(f"{filename} (erro inesperado)")
             # Tenta remover arquivo mesmo com erro
-            if os.path.exists(filepath):
-                try: os.remove(filepath)
-                except OSError as re: logger.error(f"Erro ao remover {filepath} após erro: {re}")
-
-    # Verifica se algum arquivo foi processado com sucesso
-    if not resultados_por_ano and arquivos_processados_count == 0: # Nenhum dado válido extraído
-        if erros:
-            flash(f'Falha ao processar todos os arquivos enviados. Erros: {"; ".join(erros)}', 'error')
-        else:
-            flash('Nenhum arquivo PDF válido encontrado ou processado.', 'warning')
-        return redirect(url_for('index'))
-
-    # Salva na sessão
-    session['resultados_por_ano'] = resultados_por_ano
-    session['erros'] = list(set(erros)) # Remove duplicatas da lista de erros
-
-    # Mensagem de aviso se houve erros parciais
-    if session['erros']:
-        flash(f'Processamento concluído com {len(session["erros"])} erro(s). Verifique os detalhes. Arquivos com erro: {", ".join(session["erros"])}', 'warning')
-
-    return redirect(url_for('mostrar_resultados'))
-
-# Rota mostrar_resultados MODIFICADA para exibir por ano
-@app.route('/resultados')
-def mostrar_resultados():
-    if 'resultados_por_ano' not in session:
-        flash('Nenhum resultado encontrado. Por favor, faça o upload dos arquivos primeiro.', 'warning')
-        return redirect(url_for('index'))
-
-    resultados_por_ano = session.get('resultados_por_ano', {})
-    erros_proc = session.get('erros', []) # Pega a lista de erros da sessão
-
-    # Calcula o total geral somando os totais de cada ano válido
-    total_geral_calculado = 0.0
-    for ano, dados_ano in resultados_por_ano.items():
-        # Considera apenas anos válidos (evita somar "Desconhecido", etc., se houver)
-        if ano.isdigit() and len(ano) == 4:
-             total_geral_calculado += dados_ano.get('total_ano', 0.0) # Usa .get para segurança
-
-    # Ordena os anos para exibição (opcional, mas recomendado)
-    anos_ordenados = sorted([a for a in resultados_por_ano.keys() if a.isdigit()], key=int, reverse=True)
-    outros_anos = sorted([a for a in resultados_por_ano.keys() if not a.isdigit()])
-    chaves_ordenadas = anos_ordenados + outros_anos
-    resultados_por_ano_ordenado = {chave: resultados_por_ano[chave] for chave in chaves_ordenadas}
-
-
-    return render_template('resultado.html',
-                           resultados_por_ano=resultados_por_ano_ordenado, # Passa a estrutura por ano ordenada
-                           total_geral=total_geral_calculado,        # Passa o total geral calculado
-                           erros_processamento=erros_proc,           # Passa a lista de erros
-                           now=datetime.now())
-
-# Rota detalhes_mensais MODIFICADA para buscar detalhes por ano
-@app.route('/detalhes')
-def detalhes_mensais():
-    if 'resultados_por_ano' not in session:
-        return redirect(url_for('index'))
-
-    resultados_por_ano = session['resultados_por_ano']
-    detalhes = []
-    anos_disponiveis = set()
-
-    for ano, dados_ano in resultados_por_ano.items():
-        anos_disponiveis.add(ano)
-        # Acessa a chave correta 'detalhes_mensais'
-        for detalhe_mensal in dados_ano.get('detalhes_mensais', []): # Usa .get para segurança
-            detalhe_mensal['ano'] = ano # Adiciona o ano para possível uso futuro
-            detalhes.append(detalhe_mensal)
-
-    erros_proc = session.get('erros', [])
-    resultados_validos = []
-    resultados_invalidos = []
-
-    for r in detalhes:
-        mes_str = r.get('mes', 'Período não identificado')
-        if mes_str == 'Período não identificado':
-            resultados_invalidos.append(r)
-            continue
-
-        try:
-            partes = mes_str.split()
-            mes_nome = partes[0]
-            ano = int(partes[1])
-            mes_num = 13 # Default para inválido/desconhecido
-            for nome_map, num_map in MESES_ORDEM.items():
-                 if mes_nome.lower() == nome_map.lower():
-                      mes_num = num_map
-                      break
-            if mes_num != 13:
-                resultados_validos.append((ano, mes_num, r))
-            else:
-                 logger.warning(f"Não foi possível mapear o mês '{mes_nome}' para um número.")
-                 resultados_invalidos.append(r)
-
-        except (ValueError, IndexError, TypeError) as e: # Adiciona TypeError para segurança
-            logger.error(f"Erro ao parsear/ordenar mês '{mes_str}' do arquivo {r.get('arquivo')}: {e}")
-            resultados_invalidos.append(r)
-
-    # Ordena primeiro por ano, depois por mês
-    resultados_ordenados = [r for _, _, r in sorted(resultados_validos, key=lambda x: (x[0], x[1]))]
-    # Adiciona os inválidos no final
-    resultados_ordenados += resultados_invalidos
-
-    return render_template('detalhes_mes.html',
-                           resultados=resultados_ordenados,
-                           # Ordena os anos disponíveis para o seletor (se usar um)
-                           anos_disponiveis=sorted(list(anos_disponiveis), reverse=True),
-                           erros_processamento=erros_proc,
-                           now=datetime.now())
-
-
-if __name__ == '__main__':
-    app.run(debug=True) # Mantenha debug=True para desenvolvimento local
+            if os.path.
