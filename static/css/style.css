@@ -491,7 +491,7 @@ progress::-webkit-progress-value {
   width: 100%;
   padding: 10px 12px;
   border-radius: 6px;
-  border: 1px solid rgba(6, 57, 112, 0.3);
+  border: 1px solid --branco;
   font-size: 16px;
   background-color: white;
   color: var(--maida-azul);
@@ -504,7 +504,7 @@ progress::-webkit-progress-value {
 .form-group select:hover {
   transform: none;
   box-shadow: none;
-  border-color: var(--maida-rosa);
+  border-color: var(--maida-amarelo);
 }
 
 .form-group select:focus,
