@@ -65,78 +65,105 @@
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
     
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Elementos do DOM
-            const tamanhoFamilia = document.getElementById('tamanho-familia');
-            const conjugeContainer = document.getElementById('conjuge-container');
-            const dependentesContainer = document.getElementById('dependentes-container');
-            const dependentesLista = document.getElementById('dependentes-lista');
-            const btnAdicionarDependente = document.getElementById('adicionar-dependente');
+    document.addEventListener('DOMContentLoaded', () => {
+        // Elementos do DOM
+        const tamanhoFamilia = document.getElementById('tamanho-familia');
+        const conjugeContainer = document.getElementById('conjuge-container');
+        const dependentesContainer = document.getElementById('dependentes-container');
+        const dependentesLista = document.getElementById('dependentes-lista');
+        const btnAdicionarDependente = document.getElementById('adicionar-dependente');
+        const familiaForm = document.getElementById('familia-form');
 
-            // Atualizar interface quando o tamanho da família muda
-            tamanhoFamilia.addEventListener('change', function() {
-                const qtd = parseInt(this.value);
-                const maxDependentes = Math.max(0, qtd - 1);
-                
-                if (qtd > 1) {
-                    conjugeContainer.classList.remove('hidden');
-                    dependentesContainer.classList.remove('hidden');
-                } else {
-                    conjugeContainer.classList.add('hidden');
-                    dependentesContainer.classList.add('hidden');
-                }
-                
-                dependentesLista.innerHTML = '';
-                btnAdicionarDependente.disabled = maxDependentes === 0;
-            });
+        // Atualizar interface quando o tamanho da família muda
+        tamanhoFamilia.addEventListener('change', function() {
+            const qtd = parseInt(this.value);
+            const maxDependentes = Math.max(0, qtd - 1);
+            
+            if (qtd > 1) {
+                conjugeContainer.classList.remove('hidden');
+                dependentesContainer.classList.remove('hidden');
+            } else {
+                conjugeContainer.classList.add('hidden');
+                dependentesContainer.classList.add('hidden');
+            }
+            
+            dependentesLista.innerHTML = '';
+            btnAdicionarDependente.disabled = maxDependentes === 0;
+        });
 
-            // Adicionar novo dependente (mantido igual)
-            btnAdicionarDependente.addEventListener('click', function() {
-                const qtd = parseInt(tamanhoFamilia.value);
-                const maxDependentes = qtd - 1;
-                const currentDependentes = document.querySelectorAll('.dependente-item').length;
-                
-                if (currentDependentes >= maxDependentes) {
-                    alert(`Você pode adicionar no máximo ${maxDependentes} dependentes.`);
-                    return;
-                }
-                
-                const dependenteId = Date.now();
-                const dependenteHTML = `
-                    <div class="dependente-item" id="dependente-${dependenteId}">
-                        <div class="form-row">
-                            <!-- ... manter o conteúdo do dependente igual ... -->
+        // Adicionar novo dependente
+        btnAdicionarDependente.addEventListener('click', function() {
+            const qtd = parseInt(tamanhoFamilia.value);
+            const maxDependentes = qtd - 1;
+            const currentDependentes = document.querySelectorAll('.dependente-item').length;
+            
+            if (currentDependentes >= maxDependentes) {
+                alert(`Você pode adicionar no máximo ${maxDependentes} dependentes.`);
+                return;
+            }
+            
+            const dependenteId = Date.now();
+            const dependenteHTML = `
+                <div class="dependente-item" id="dependente-${dependenteId}">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nome-${dependenteId}">Nome:</label>
+                            <input type="text" id="nome-${dependenteId}" name="nome_${dependenteId}" required>
                         </div>
+                        <div class="form-group">
+                            <label for="tipo-${dependenteId}">Tipo:</label>
+                            <select id="tipo-${dependenteId}" name="tipo_${dependenteId}" required>
+                                <option value="" disabled selected>Selecione</option>
+                                <option value="filho">Filho(a)</option>
+                                <option value="enteado">Enteado(a)</option>
+                                <option value="neto">Neto(a)</option>
+                                <option value="tutelado">Tutelado(a)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="nascimento-${dependenteId}">Data Nascimento:</label>
+                            <input type="date" id="nascimento-${dependenteId}" name="nascimento_${dependenteId}" required>
+                        </div>
+                        <div class="form-group check-group">
+                            <input type="checkbox" id="risco-${dependenteId}" name="risco_${dependenteId}">
+                            <label for="risco-${dependenteId}">Parcela de Risco</label>
+                        </div>
+                        <div class="form-group check-group">
+                            <input type="checkbox" id="interrompido-${dependenteId}" name="interrompido_${dependenteId}" class="interrupcao-checkbox">
+                            <label for="interrompido-${dependenteId}">Interrupção de Plano</label>
+                        </div>
+                        <div id="data-interrupcao-${dependenteId}" class="form-group hidden">
+                            <label for="data-exclusao-${dependenteId}">Data de Exclusão:</label>
+                            <input type="date" id="data-exclusao-${dependenteId}" name="data_exclusao_${dependenteId}">
+                        </div>
+                        <button type="button" class="btn-remover" data-id="${dependenteId}">×</button>
                     </div>
-                `;
-                
-                dependentesLista.insertAdjacentHTML('beforeend', dependenteHTML);
-                btnAdicionarDependente.disabled = currentDependentes + 1 >= maxDependentes;
-                
-                // Configurar eventos para os novos elementos
-                document.getElementById(`interrompido-${dependenteId}`).addEventListener('change', function() {
-                    const dataInterrupcao = document.getElementById(`data-interrupcao-${dependenteId}`);
-                    dataInterrupcao.classList.toggle('hidden', !this.checked);
-                });
-                
-                document.querySelector(`button[data-id="${dependenteId}"]`).addEventListener('click', function() {
-                    document.getElementById(`dependente-${this.dataset.id}`).remove();
-                    btnAdicionarDependente.disabled = false;
-                });
+                </div>
+            `;
+            
+            dependentesLista.insertAdjacentHTML('beforeend', dependenteHTML);
+            btnAdicionarDependente.disabled = currentDependentes + 1 >= maxDependentes;
+            
+            document.getElementById(`interrompido-${dependenteId}`).addEventListener('change', function() {
+                document.getElementById(`data-interrupcao-${dependenteId}`).classList.toggle('hidden', !this.checked);
+            });
+            
+            document.querySelector(`button[data-id="${dependenteId}"]`).addEventListener('click', function() {
+                document.getElementById(`dependente-${this.dataset.id}`).remove();
+                btnAdicionarDependente.disabled = false;
             });
         });
-         // Adicionar evento de submit do formulário
-        document.getElementById('familia-form').addEventListener('submit', function(e) {
+
+        // Envio do formulário
+        familiaForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Coletar dados do formulário
             const formData = {
-                tamanho_familia: document.getElementById('tamanho-familia').value,
+                tamanho_familia: tamanhoFamilia.value,
                 incluir_conjuge: document.getElementById('incluir-conjuge').checked,
                 dependentes: []
             };
 
-            // Coletar dados dos dependentes
             document.querySelectorAll('.dependente-item').forEach(dep => {
                 const id = dep.id.split('-')[1];
                 formData.dependentes.push({
@@ -149,10 +176,6 @@
                 });
             });
 
-            // Simular envio para o servidor (substituir por fetch real se necessário)
-            console.log('Dados enviados:', formData);
-            
-            // Redirecionar para contracheques.html com os parâmetros
             const queryParams = new URLSearchParams();
             queryParams.append('tamanho', formData.tamanho_familia);
             queryParams.append('incluir_conjuge', formData.incluir_conjuge);
@@ -161,6 +184,6 @@
             window.location.href = `/contracheques.html?${queryParams.toString()}`;
         });
     });
-    </script>
+</script>
 </body>
 </html>
