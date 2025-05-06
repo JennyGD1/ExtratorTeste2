@@ -54,15 +54,29 @@ class GrupoFamiliar:
         
         return membros
     
-    def calcular_contribuicoes(self, ano: int) -> Dict[str, float]:
-        """Retorna a estrutura esperada para cálculo das contribuições"""
-        return {
-            'titular': self.contar_por_tipo('titular'),
-            'conjuge': self.contar_por_tipo('conjuge'),
-            'dependente': self.contar_por_tipo('dependente', ano),
-            'agregado_jovem': self.contar_por_tipo('agregado_jovem', ano),
-            'agregado_maior': self.contar_por_tipo('agregado_maior', ano),
-            'parcelas_risco': {
-                m.id: m.tipo for m in self.membros if m.parcela_risco
-            }
-        }
+    def calcular_contribuicoes(self, ano: int, mes_num: int) -> Dict:
+    contribuicoes = {
+        'titular': 0,
+        'conjuge': 0,
+        'dependente': 0,
+        'agregado_jovem': 0,
+        'agregado_maior': 0,
+        'parcelas_risco': 0
+    }
+    
+    # Contar membros ativos no mês/ano especificado
+    for tipo, membros in self.membros.items():
+        for membro in membros:
+            # Verificar se o membro estava ativo no mês/ano
+            ativo = True
+            if membro['data_exclusao']:
+                exclusao = membro['data_exclusao']
+                if exclusao.year < int(ano) or (exclusao.year == int(ano) and exclusao.month < mes_num):
+                    ativo = False
+            
+            if ativo:
+                contribuicoes[tipo] += 1
+                if membro['risco']:
+                    contribuicoes['parcelas_risco'] += 1
+    
+    return contribuicoes
