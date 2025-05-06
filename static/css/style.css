@@ -522,7 +522,8 @@ progress::-webkit-progress-value {
 }
 
 .form-group select,
-.form-group input[type="date"] {
+.form-group input[type="date"],
+.form-group input[type="text"] {
   width: 100%;
   padding: 10px 12px;
   border-radius: 6px;
@@ -534,7 +535,8 @@ progress::-webkit-progress-value {
 }
 
 .form-group select:focus,
-.form-group input[type="date"]:focus {
+.form-group input[type="date"]:focus,
+.form-group input[type="text"]:focus {
   outline: none;
   border-color: var(--maida-amarelo);
   box-shadow: 0 0 0 2px rgba(253, 215, 0, 0.3);
@@ -546,8 +548,9 @@ progress::-webkit-progress-value {
   align-items: flex-end;
   margin-bottom: 15px;
   padding: 15px;
-  background-color: rgba(6, 57, 112, 0.05);
+  background-color: rgba(253, 215, 0, 0.2); /* Fundo amarelo claro */
   border-radius: 8px;
+  border: 1px solid rgba(253, 215, 0, 0.3);
 }
 
 .form-row .form-group {
@@ -556,8 +559,8 @@ progress::-webkit-progress-value {
 }
 
 .btn-remover {
-  background-color: var(--maida-rosa);
-  color: white;
+  background-color: var(--maida-amarelo);
+  color: var(--maida-azul);
   border: none;
   width: 30px;
   height: 30px;
@@ -565,11 +568,12 @@ progress::-webkit-progress-value {
   font-size: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-weight: bold;
 }
 
 .btn-remover:hover {
   transform: scale(1.1);
-  background-color: #e0558d;
+  background-color: #e6c700;
 }
 
 #dependentes-lista {
@@ -577,50 +581,153 @@ progress::-webkit-progress-value {
 }
 
 #adicionar-dependente {
-  background-color: var(--maida-azul);
-  color: white;
+  background-color: var(--maida-amarelo);
+  color: var(--maida-azul);
   border: none;
-  padding: 8px 16px;
+  padding: 10px 20px;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-top: 10px;
 }
 
 #adicionar-dependente:hover {
-  background-color: #052a52;
+  background-color: #e6c700;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 /* Checkbox personalizado */
-.form-group input[type="checkbox"] {
+.check-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.check-group input[type="checkbox"] {
   appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--maida-rosa);
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--maida-azul);
   border-radius: 4px;
   margin-right: 8px;
   position: relative;
-  vertical-align: middle;
   cursor: pointer;
+  background-color: white;
 }
 
-.form-group input[type="checkbox"]:checked {
-  background-color: var(--maida-rosa);
+.check-group input[type="checkbox"]:checked {
+  background-color: var(--maida-amarelo);
+  border-color: var(--maida-azul);
 }
 
-.form-group input[type="checkbox"]:checked::after {
+.check-group input[type="checkbox"]:checked::after {
   content: "✓";
   position: absolute;
-  color: white;
-  font-size: 12px;
+  color: var(--maida-azul);
+  font-size: 14px;
+  font-weight: bold;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
 
-.form-group input[type="checkbox"] + label {
+.check-group label {
   cursor: pointer;
-  vertical-align: middle;
+  color: var(--maida-azul);
+  font-weight: normal;
+}
+
+/* Estilo para o botão de submit */
+.process-btn {
+  background-color: var(--maida-amarelo);
+  color: var(--maida-azul);
+  border: none;
+  padding: 12px 25px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+  margin-top: 20px;
+}
+
+.process-btn:hover {
+  background-color: #e6c700;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Estilo para o select grande */
+#tamanho-familia {
+  height: auto;
+  padding: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: white;
+}
+
+/* Estilo para opções do select */
+#tamanho-familia option {
+  padding: 8px 12px;
+  background-color: white;
+  color: var(--maida-azul);
+}
+
+/* Feedback visual para botão desabilitado */
+#adicionar-dependente:disabled {
+  background-color: #cccccc;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Container da lista de dependentes com scroll */
+#dependentes-lista {
+  max-height: 400px;
+  overflow-y: auto;
+  margin: 20px 0;
+  padding-right: 10px;
+}
+
+/* Custom scrollbar */
+#dependentes-lista::-webkit-scrollbar {
+  width: 8px;
+}
+
+#dependentes-lista::-webkit-scrollbar-track {
+  background: rgba(6, 57, 112, 0.1);
+  border-radius: 10px;
+}
+
+#dependentes-lista::-webkit-scrollbar-thumb {
+  background-color: var(--maida-amarelo);
+  border-radius: 10px;
+}
+
+/* Estilo para o container do cônjuge */
+#conjuge-container {
+  background-color: rgba(253, 215, 0, 0.2);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(253, 215, 0, 0.3);
+}
+
+/* Estilo para o checkbox de interrupção */
+.interrupcao-checkbox {
+  margin-left: 15px;
+}
+
+/* Estilo para o campo de data de exclusão */
+#data-interrupcao-container {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
 }
 
 /* Responsividade */
@@ -636,6 +743,10 @@ progress::-webkit-progress-value {
   
   .btn-remover {
     align-self: flex-end;
+  }
+  
+  .check-group {
+    margin-top: 10px;
   }
 }
 
