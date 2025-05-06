@@ -469,42 +469,6 @@ progress::-webkit-progress-value {
   100% { transform: rotate(360deg); }
 }
 
-/* --- Media Queries --- */
-@media (max-width: 600px) {
-  /* Ajustes Index */
-  .page-index .content-box {
-    padding: 30px 20px;
-  }
-  .page-index label,
-  .page-index button {
-    padding: 10px 20px;
-    font-size: 15px;
-  }
-
-  /* Ajustes Resultado/Detalhes */
-  .page-resultado .btn-container,
-  .page-detalhes .btn-container {
-     flex-direction: column;
-  }
-  .page-resultado .btn,
-  .page-detalhes .btn {
-     width: 100%;
-     justify-content: center;
-  }
-
-  /* Ajustes Seletor de Ano */
-  .year-selector {
-    padding: 8px;
-  }
-  .year-selector label {
-    display: block;
-    margin-bottom: 8px;
-    margin-right: 0;
-  }
-  .year-selector select {
-    width: 100%;
-  }
-}
 /* --- Estilos do Formulário de Família --- */
 .hidden {
   display: none !important;
@@ -531,7 +495,16 @@ progress::-webkit-progress-value {
   font-size: 16px;
   background-color: white;
   color: var(--maida-azul);
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease;
+}
+
+/* Correções de hover para campos do formulário */
+.form-group input[type="date"]:hover,
+.form-group input[type="text"]:hover,
+.form-group select:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--maida-rosa);
 }
 
 .form-group select:focus,
@@ -548,9 +521,10 @@ progress::-webkit-progress-value {
   align-items: flex-end;
   margin-bottom: 15px;
   padding: 15px;
-  background-color: rgba(253, 215, 0, 0.2); /* Fundo amarelo claro */
+  background-color: rgba(253, 215, 0, 0.2);
   border-radius: 8px;
   border: 1px solid rgba(253, 215, 0, 0.3);
+  transition: none;
 }
 
 .form-row .form-group {
@@ -577,7 +551,24 @@ progress::-webkit-progress-value {
 }
 
 #dependentes-lista {
+  max-height: 400px;
+  overflow-y: auto;
   margin: 20px 0;
+  padding-right: 10px;
+}
+
+#dependentes-lista::-webkit-scrollbar {
+  width: 8px;
+}
+
+#dependentes-lista::-webkit-scrollbar-track {
+  background: rgba(6, 57, 112, 0.1);
+  border-radius: 10px;
+}
+
+#dependentes-lista::-webkit-scrollbar-thumb {
+  background-color: var(--maida-amarelo);
+  border-radius: 10px;
 }
 
 #adicionar-dependente {
@@ -599,11 +590,19 @@ progress::-webkit-progress-value {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
+#adicionar-dependente:disabled {
+  background-color: #cccccc;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 /* Checkbox personalizado */
 .check-group {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
+  cursor: default;
 }
 
 .check-group input[type="checkbox"] {
@@ -670,45 +669,13 @@ progress::-webkit-progress-value {
   background-color: white;
 }
 
-/* Estilo para opções do select */
 #tamanho-familia option {
   padding: 8px 12px;
   background-color: white;
   color: var(--maida-azul);
 }
 
-/* Feedback visual para botão desabilitado */
-#adicionar-dependente:disabled {
-  background-color: #cccccc;
-  color: #666;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-/* Container da lista de dependentes com scroll */
-#dependentes-lista {
-  max-height: 400px;
-  overflow-y: auto;
-  margin: 20px 0;
-  padding-right: 10px;
-}
-
-/* Custom scrollbar */
-#dependentes-lista::-webkit-scrollbar {
-  width: 8px;
-}
-
-#dependentes-lista::-webkit-scrollbar-track {
-  background: rgba(6, 57, 112, 0.1);
-  border-radius: 10px;
-}
-
-#dependentes-lista::-webkit-scrollbar-thumb {
-  background-color: var(--maida-amarelo);
-  border-radius: 10px;
-}
-
-/* Estilo para o container do cônjuge */
+/* Container do cônjuge */
 #conjuge-container {
   background-color: rgba(253, 215, 0, 0.2);
   padding: 15px;
@@ -730,7 +697,7 @@ progress::-webkit-progress-value {
   border-radius: 6px;
 }
 
-/* Responsividade */
+/* --- Media Queries --- */
 @media (max-width: 768px) {
   .form-row {
     flex-direction: column;
@@ -750,45 +717,38 @@ progress::-webkit-progress-value {
   }
 }
 
-/* Estilo para o select grande */
-#tamanho-familia {
-  height: auto;
-  padding: 12px;
-  max-height: 200px;
-  overflow-y: auto;
-}
+@media (max-width: 600px) {
+  /* Ajustes Index */
+  .page-index .content-box {
+    padding: 30px 20px;
+  }
+  .page-index label,
+  .page-index button {
+    padding: 10px 20px;
+    font-size: 15px;
+  }
 
-/* Estilo para opções do select */
-#tamanho-familia option {
-  padding: 8px 12px;
-}
+  /* Ajustes Resultado/Detalhes */
+  .page-resultado .btn-container,
+  .page-detalhes .btn-container {
+    flex-direction: column;
+  }
+  .page-resultado .btn,
+  .page-detalhes .btn {
+    width: 100%;
+    justify-content: center;
+  }
 
-/* Feedback visual para botão desabilitado */
-#adicionar-dependente:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-/* Container da lista de dependentes com scroll */
-#dependentes-lista {
-  max-height: 400px;
-  overflow-y: auto;
-  margin: 20px 0;
-  padding-right: 10px;
-}
-
-/* Custom scrollbar */
-#dependentes-lista::-webkit-scrollbar {
-  width: 8px;
-}
-
-#dependentes-lista::-webkit-scrollbar-track {
-  background: rgba(6, 57, 112, 0.1);
-  border-radius: 10px;
-}
-
-#dependentes-lista::-webkit-scrollbar-thumb {
-  background-color: var(--maida-rosa);
-  border-radius: 10px;
+  /* Ajustes Seletor de Ano */
+  .year-selector {
+    padding: 8px;
+  }
+  .year-selector label {
+    display: block;
+    margin-bottom: 8px;
+    margin-right: 0;
+  }
+  .year-selector select {
+    width: 100%;
+  }
 }
