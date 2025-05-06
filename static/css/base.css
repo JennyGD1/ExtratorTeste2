@@ -1,0 +1,236 @@
+/* static/css/base.css */
+
+/* --- Variáveis Globais --- */
+:root {
+  --maida-azul: #063970;
+  --maida-rosa: #f86ba3;
+  --maida-amarelo: #fdd700;
+  --branco: #ffffff;
+  --fundo-azul: #224aa2; /* Usado no preloader e index */
+}
+
+/* --- Estilos do Preloader --- */
+#preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--fundo-azul);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.6s ease-out, visibility 0.6s ease-out;
+}
+
+#preloader.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.preloader-logo {
+  max-width: 180px;
+  margin-bottom: 30px;
+}
+
+.preloader-spinner {
+  width: 60px;
+  height: 60px;
+  overflow: visible;
+}
+
+.preloader-spinner circle {
+  fill: none;
+  stroke: var(--maida-amarelo);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transform-origin: center;
+  animation: girarInfinito 1.5s linear infinite;
+}
+
+#preloader-circulo-externo {
+  stroke-dasharray: 188 63;
+}
+
+#preloader-circulo-interno {
+  stroke-dasharray: 94 94;
+  animation-direction: reverse;
+}
+
+/* --- Base e Reset Mínimo --- */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+/* --- Estilos Gerais --- */
+::selection {
+  background: var(--maida-rosa);
+  color: var(--branco);
+}
+
+h1, h2 {
+  color: var(--maida-azul);
+}
+
+/* --- Componentes Comuns --- */
+
+/* Logo (Usado no Index) */
+.logo {
+  margin-top: 30px;
+}
+
+.logo img {
+  max-width: 180px;
+}
+
+/* Scrollbar Customizado */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
+html, body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.page-index, .page-resultado, .page-detalhes {
+  overflow-y: scroll;
+}
+
+.scrollbar-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100vh;
+  background-color: var(--branco);
+  z-index: 9999;
+}
+
+.scrollbar-thumb {
+  background-color: var(--maida-amarelo);
+  width: 100%;
+  height: 0;
+  transition: height 0.2s ease;
+  border-radius: 10px 0 0 10px;
+}
+
+/* Ripple Effect */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple-animation 0.6s linear;
+  background-color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* Botões (Estilo comum de resultado/detalhes) */
+.btn-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 40px 0;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background-color: var(--maida-amarelo);
+  color: var(--maida-azul);
+}
+
+.btn-secondary {
+  background-color: var(--maida-rosa);
+  color: white;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  opacity: 0.95;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+/* Tabela (Estilo comum de resultado/detalhes) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.page-detalhes table {
+  margin-top: 10px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.total-geral {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: var(--branco);
+  background-color: var(--maida-azul);
+  border-top: 2px solid var(--maida-azul);
+}
+
+/* --- Animações --- */
+@property --gradient-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes girarInfinito {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fluxoContinuoBorda {
+  to { --gradient-angle: 360deg; }
+}
+
+@keyframes ripple-animation {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes spinBtn {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
