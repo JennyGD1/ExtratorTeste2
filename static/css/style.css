@@ -505,3 +505,136 @@ progress::-webkit-progress-value {
     width: 100%;
   }
 }
+/* --- Estilos do Formulário de Família --- */
+.hidden {
+  display: none !important;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: var(--maida-azul);
+}
+
+.form-group select,
+.form-group input[type="date"] {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(6, 57, 112, 0.3);
+  font-size: 16px;
+  background-color: white;
+  color: var(--maida-azul);
+  transition: all 0.3s ease;
+}
+
+.form-group select:focus,
+.form-group input[type="date"]:focus {
+  outline: none;
+  border-color: var(--maida-amarelo);
+  box-shadow: 0 0 0 2px rgba(253, 215, 0, 0.3);
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+  align-items: flex-end;
+  margin-bottom: 15px;
+  padding: 15px;
+  background-color: rgba(6, 57, 112, 0.05);
+  border-radius: 8px;
+}
+
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.btn-remover {
+  background-color: var(--maida-rosa);
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-remover:hover {
+  transform: scale(1.1);
+  background-color: #e0558d;
+}
+
+#dependentes-lista {
+  margin: 20px 0;
+}
+
+#adicionar-dependente {
+  background-color: var(--maida-azul);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#adicionar-dependente:hover {
+  background-color: #052a52;
+}
+
+/* Checkbox personalizado */
+.form-group input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--maida-rosa);
+  border-radius: 4px;
+  margin-right: 8px;
+  position: relative;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.form-group input[type="checkbox"]:checked {
+  background-color: var(--maida-rosa);
+}
+
+.form-group input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  color: white;
+  font-size: 12px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.form-group input[type="checkbox"] + label {
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .form-row .form-group {
+    width: 100%;
+  }
+  
+  .btn-remover {
+    align-self: flex-end;
+  }
+}
