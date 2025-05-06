@@ -1,1 +1,113 @@
+/* static/css/resultado.css */
 
+body.page-resultado {
+  padding: 20px;
+  background: url("{{ url_for('static', filename='img/wallpaper_maida.png') }}") no-repeat center center fixed;
+  background-size: cover;
+  color: var(--maida-azul);
+  min-height: 100vh;
+}
+
+.page-resultado h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  border-bottom: 2px solid rgba(0,0,0,0.1);
+  padding-bottom: 10px;
+}
+
+.page-resultado h2 {
+  margin-top: 30px;
+  font-size: 1.3em;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.page-resultado th, .page-resultado td {
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
+.page-resultado th {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.container-centralizado {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: rgba(255, 255, 255, 0.85);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.info-text {
+  text-align: center;
+  color: var(--maida-azul);
+  margin-top: 30px;
+  font-size: 0.9em;
+}
+
+.year-selector {
+  margin: 20px 0;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 5px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.year-selector label {
+  margin-right: 10px;
+  font-weight: bold;
+  color: var(--maida-azul);
+}
+
+.year-selector select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(6, 57, 112, 0.3);
+  font-size: 16px;
+  background-color: white;
+  color: var(--maida-azul);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.year-selector select:hover {
+  border-color: var(--maida-rosa);
+  box-shadow: 0 0 0 2px rgba(248, 107, 163, 0.2);
+}
+
+.year-selector select:focus {
+  outline: none;
+  border-color: var(--maida-amarelo);
+  box-shadow: 0 0 0 2px rgba(253, 215, 0, 0.3);
+}
+
+.ano-container {
+  margin-bottom: 30px;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 600px) {
+  .page-resultado .btn-container,
+  .page-detalhes .btn-container {
+    flex-direction: column;
+  }
+  .page-resultado .btn,
+  .page-detalhes .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .year-selector {
+    padding: 8px;
+  }
+  .year-selector label {
+    display: block;
+    margin-bottom: 8px;
+    margin-right: 0;
+  }
+  .year-selector select {
+    width: 100%;
+  }
+}
