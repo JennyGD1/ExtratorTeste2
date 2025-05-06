@@ -159,8 +159,9 @@ def processar_pdf(caminho_pdf):
         logger.error(f"Erro ao processar PDF {caminho_pdf}: {str(e)}")
         return []
 
-def calcular_contribuicoes_esperadas(valor_titular: float, ano: int, familia: GrupoFamiliar) -> Dict:
-    contribuicoes = familia.calcular_contribuicoes(ano)
+
+def calcular_contribuicoes_esperadas(valor_titular: float, ano: int, familia: GrupoFamiliar, mes_num: int) -> Dict:
+    contribuicoes = familia.calcular_contribuicoes(ano, mes_num)
     valor_agregado_jovem = VALORES_AGREGADOS['agregado_jovem'].get(str(ano), VALORES_AGREGADOS['agregado_jovem']['default'])
     
     return {
@@ -208,31 +209,33 @@ def cadastrar_familia():
         # Processar cônjuge (se marcado)
         if 'incluir_conjuge' in request.form:
             conjuge_nasc = request.form.get('conjuge_nascimento')
+            conjuge_exclusao = request.form.get('conjuge_exclusao') if 'interrompido_conjuge' in request.form else None
+            
             if conjuge_nasc:
-                if not familia.adicionar_membro('conjuge', conjuge_nasc, 'conjuge_risco' in request.form):
+                if not familia.adicionar_membro(
+                    'conjuge', 
+                    conjuge_nasc, 
+                    'conjuge_risco' in request.form,
+                    conjuge_exclusao
+                ):
                     errors.append("Data de nascimento do cônjuge inválida")
             else:
                 errors.append("Data de nascimento do cônjuge é obrigatória")
         
-        # Processar dependentes (até 20)
-        dependentes_count = 0
+        # Processar dependentes
         for key, value in request.form.items():
             if key.startswith('tipo_'):
-                dependentes_count += 1
-                if dependentes_count > 20:
-                    errors.append("Número máximo de dependentes é 20")
-                    break
-                    
                 prefix = key.split('_')[1]
                 tipo = value
                 nascimento = request.form.get(f'nascimento_{prefix}')
                 risco = f'risco_{prefix}' in request.form
+                interrompido = f'interrompido_{prefix}' in request.form
+                data_exclusao = request.form.get(f'data_exclusao_{prefix}') if interrompido else None
                 
                 if tipo in ['filho', 'enteado', 'tutelado']:
                     categoria = 'dependente'
                 elif tipo == 'neto':
                     try:
-                        from datetime import datetime
                         nasc_date = datetime.strptime(nascimento, '%Y-%m-%d')
                         idade = datetime.now().year - nasc_date.year
                         categoria = 'agregado_jovem' if idade < 24 else 'agregado_maior'
@@ -240,7 +243,7 @@ def cadastrar_familia():
                         errors.append(f"Data de nascimento inválida para {tipo}")
                         continue
                 
-                if not familia.adicionar_membro(categoria, nascimento, risco):
+                if not familia.adicionar_membro(categoria, nascimento, risco, data_exclusao):
                     errors.append(f"Data de nascimento inválida para {tipo}")
         
         if not errors:
@@ -304,7 +307,8 @@ def upload():
                 valores_esperados = calcular_contribuicoes_esperadas(
                     resultado['valores']['titular'],
                     int(ano),
-                    familia
+                    familia,
+                    MESES_ORDEM[resultado['mes_ano'].split()[0]]
                 )
 
                 for campo in ['titular', 'conjuge', 'dependente', 'agregado_jovem', 'agregado_maior', 'parcela_risco']:
