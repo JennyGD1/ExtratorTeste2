@@ -125,6 +125,42 @@
                 });
             });
         });
+         // Adicionar evento de submit do formulário
+        document.getElementById('familia-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Coletar dados do formulário
+            const formData = {
+                tamanho_familia: document.getElementById('tamanho-familia').value,
+                incluir_conjuge: document.getElementById('incluir-conjuge').checked,
+                dependentes: []
+            };
+
+            // Coletar dados dos dependentes
+            document.querySelectorAll('.dependente-item').forEach(dep => {
+                const id = dep.id.split('-')[1];
+                formData.dependentes.push({
+                    nome: document.getElementById(`nome-${id}`).value,
+                    tipo: document.getElementById(`tipo-${id}`).value,
+                    nascimento: document.getElementById(`nascimento-${id}`).value,
+                    risco: document.getElementById(`risco-${id}`).checked,
+                    interrompido: document.getElementById(`interrompido-${id}`).checked,
+                    data_exclusao: document.getElementById(`data-exclusao-${id}`).value
+                });
+            });
+
+            // Simular envio para o servidor (substituir por fetch real se necessário)
+            console.log('Dados enviados:', formData);
+            
+            // Redirecionar para contracheques.html com os parâmetros
+            const queryParams = new URLSearchParams();
+            queryParams.append('tamanho', formData.tamanho_familia);
+            queryParams.append('incluir_conjuge', formData.incluir_conjuge);
+            queryParams.append('num_dependentes', formData.dependentes.length);
+            
+            window.location.href = `/contracheques.html?${queryParams.toString()}`;
+        });
+    });
     </script>
 </body>
 </html>
