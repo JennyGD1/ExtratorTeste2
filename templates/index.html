@@ -144,6 +144,11 @@
           <div class="dependente-item" id="dependente-${dependenteId}">
             <div class="form-row">
               <div class="form-group">
+                <label for="nome-${dependenteId}">Nome:</label>
+                <input type="text" id="nome-${dependenteId}" name="nome_${dependenteId}" required>
+              </div>
+              
+              <div class="form-group">
                 <label for="tipo-${dependenteId}">Tipo:</label>
                 <select id="tipo-${dependenteId}" name="tipo_${dependenteId}" required>
                   <option value="" disabled selected>Selecione</option>
@@ -159,9 +164,19 @@
                 <input type="date" id="nascimento-${dependenteId}" name="nascimento_${dependenteId}" required>
               </div>
               
-              <div class="form-group">
+              <div class="form-group check-group">
                 <input type="checkbox" id="risco-${dependenteId}" name="risco_${dependenteId}">
                 <label for="risco-${dependenteId}">Parcela de Risco</label>
+              </div>
+              
+              <div class="form-group check-group">
+                <input type="checkbox" id="interrompido-${dependenteId}" name="interrompido_${dependenteId}" class="interrupcao-checkbox">
+                <label for="interrompido-${dependenteId}">Interrupção de Plano</label>
+              </div>
+              
+              <div id="data-interrupcao-${dependenteId}" class="form-group hidden">
+                <label for="data-exclusao-${dependenteId}">Data de Exclusão:</label>
+                <input type="date" id="data-exclusao-${dependenteId}" name="data_exclusao_${dependenteId}">
               </div>
               
               <button type="button" class="btn-remover" data-id="${dependenteId}">×</button>
@@ -171,6 +186,16 @@
         
         dependentesLista.insertAdjacentHTML('beforeend', dependenteHTML);
         btnAdicionarDependente.disabled = currentDependentes + 1 >= maxDependentes;
+        
+        // Adicionar evento para mostrar/ocultar data de interrupção
+        document.getElementById(`interrompido-${dependenteId}`).addEventListener('change', function() {
+          const dataInterrupcao = document.getElementById(`data-interrupcao-${dependenteId}`);
+          if (this.checked) {
+            dataInterrupcao.classList.remove('hidden');
+          } else {
+            dataInterrupcao.classList.add('hidden');
+          }
+        });
         
         // Adicionar evento de remoção
         document.querySelector(`button[data-id="${dependenteId}"]`).addEventListener('click', function() {
