@@ -105,7 +105,7 @@ h1, h2 {
 
 /* Estilo H1 para page-index */
 .page-index h1 {
-   margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 /* Estilo H1 para outras páginas */
@@ -148,7 +148,7 @@ body::-webkit-scrollbar {
   height: 0 !important;
 }
 html, body {
-  scrollbar-width: none;   /* Firefox */
+  scrollbar-width: none;    /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */
 }
 .page-index, .page-resultado, .page-detalhes {
@@ -232,7 +232,7 @@ table {
 .page-detalhes table {
   margin-top: 10px;
   margin-bottom: 30px;
-   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 th, td {
@@ -241,17 +241,17 @@ th, td {
   border-bottom: 1px solid rgba(0,0,0,0.1);
 }
 .page-resultado th, .page-resultado td {
-   background-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, 0.6);
 }
 .page-detalhes th, .page-detalhes td {
-   background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(255, 255, 255, 0.8);
 }
 
 th {
   font-weight: 600;
 }
 .page-resultado th {
-   background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(255, 255, 255, 0.8);
 }
 
 .total-geral {
@@ -451,304 +451,3 @@ progress::-webkit-progress-value {
 @keyframes girarInfinito {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-}
-
-@keyframes fluxoContinuoBorda {
-  to { --gradient-angle: 360deg; }
-}
-
-@keyframes ripple-animation {
-  to {
-    transform: scale(4);
-    opacity: 0;
-  }
-}
-
-@keyframes spinBtn {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* --- Estilos do Formulário de Família --- */
-.hidden {
-  display: none !important;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: bold;
-  color: var(--maida-azul);
-}
-
-.form-group select,
-.form-group input[type="date"],
-.form-group input[type="text"] {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 6px;
-  border: 1px solid --branco;
-  font-size: 16px;
-  background-color: white;
-  color: var(--maida-azul);
-  transition: border-color 0.3s ease;
-}
-
-/* Correções de hover para campos do formulário */
-.form-group input[type="date"]:hover,
-.form-group input[type="text"]:hover,
-.form-group select:hover {
-  transform: none;
-  box-shadow: none;
-  border-color: var(--maida-amarelo);
-}
-
-.form-group select:focus,
-.form-group input[type="date"]:focus,
-.form-group input[type="text"]:focus {
-  outline: none;
-  border-color: var(--maida-amarelo);
-  box-shadow: 0 0 0 2px rgba(253, 215, 0, 0.3);
-}
-
-.form-row {
-  display: flex;
-  gap: 15px;
-  align-items: flex-end;
-  margin-bottom: 15px;
-  padding: 15px;
-  background-color: rgba(253, 215, 0, 0.2);
-  border-radius: 8px;
-  border: 1px solid rgba(253, 215, 0, 0.3);
-  transition: none;
-}
-
-.form-row .form-group {
-  flex: 1;
-  margin-bottom: 0;
-}
-
-.btn-remover {
-  background-color: var(--maida-amarelo);
-  color: var(--maida-azul);
-  border: none;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: bold;
-}
-
-.btn-remover:hover {
-  transform: scale(1.1);
-  background-color: #e6c700;
-}
-
-#dependentes-lista {
-  max-height: 400px;
-  overflow-y: auto;
-  margin: 20px 0;
-  padding-right: 10px;
-}
-
-#dependentes-lista::-webkit-scrollbar {
-  width: 8px;
-}
-
-#dependentes-lista::-webkit-scrollbar-track {
-  background: rgba(6, 57, 112, 0.1);
-  border-radius: 10px;
-}
-
-#dependentes-lista::-webkit-scrollbar-thumb {
-  background-color: var(--maida-amarelo);
-  border-radius: 10px;
-}
-
-#adicionar-dependente {
-  background-color: var(--maida-amarelo);
-  color: var(--maida-azul);
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 10px;
-}
-
-#adicionar-dependente:hover {
-  background-color: #e6c700;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-#adicionar-dependente:disabled {
-  background-color: #cccccc;
-  color: #666;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-/* Checkbox personalizado */
-.check-group {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-  cursor: default;
-}
-
-.check-group input[type="checkbox"] {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--maida-azul);
-  border-radius: 4px;
-  margin-right: 8px;
-  position: relative;
-  cursor: pointer;
-  background-color: white;
-}
-
-.check-group input[type="checkbox"]:checked {
-  background-color: var(--maida-amarelo);
-  border-color: var(--maida-azul);
-}
-
-.check-group input[type="checkbox"]:checked::after {
-  content: "✓";
-  position: absolute;
-  color: var(--maida-azul);
-  font-size: 14px;
-  font-weight: bold;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.check-group label {
-  cursor: pointer;
-  color: var(--maida-azul);
-  font-weight: normal;
-}
-
-/* Estilo para o botão de submit */
-.process-btn {
-  background-color: var(--maida-amarelo);
-  color: var(--maida-azul);
-  border: none;
-  padding: 12px 25px;
-  font-size: 16px;
-  font-weight: bold;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-block;
-  margin-top: 20px;
-}
-
-.process-btn:hover {
-  background-color: #e6c700;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Estilo para o select grande */
-#tamanho-familia {
-  height: auto;
-  padding: 12px;
-  max-height: 200px;
-  overflow-y: auto;
-  background-color: white;
-}
-
-#tamanho-familia option {
-  padding: 8px 12px;
-  background-color: white;
-  color: var(--maida-azul);
-}
-
-/* Container do cônjuge */
-#conjuge-container {
-  background-color: rgba(253, 215, 0, 0.2);
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  border: 1px solid rgba(253, 215, 0, 0.3);
-}
-
-/* Estilo para o checkbox de interrupção */
-.interrupcao-checkbox {
-  margin-left: 15px;
-}
-
-/* Estilo para o campo de data de exclusão */
-#data-interrupcao-container {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: rgba(255, 255, 255, 0.7);
-  border-radius: 6px;
-}
-
-/* --- Media Queries --- */
-@media (max-width: 768px) {
-  .form-row {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .form-row .form-group {
-    width: 100%;
-  }
-  
-  .btn-remover {
-    align-self: flex-end;
-  }
-  
-  .check-group {
-    margin-top: 10px;
-  }
-}
-
-@media (max-width: 600px) {
-  /* Ajustes Index */
-  .page-index .content-box {
-    padding: 30px 20px;
-  }
-  .page-index label,
-  .page-index button {
-    padding: 10px 20px;
-    font-size: 15px;
-  }
-
-  /* Ajustes Resultado/Detalhes */
-  .page-resultado .btn-container,
-  .page-detalhes .btn-container {
-    flex-direction: column;
-  }
-  .page-resultado .btn,
-  .page-detalhes .btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  /* Ajustes Seletor de Ano */
-  .year-selector {
-    padding: 8px;
-  }
-  .year-selector label {
-    display: block;
-    margin-bottom: 8px;
-    margin-right: 0;
-  }
-  .year-selector select {
-    width: 100%;
-  }
-}
