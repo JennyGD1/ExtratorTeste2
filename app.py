@@ -394,3 +394,11 @@ def analise_ano(ano):
 
 if __name__ == '__main__':
     app.run(debug=True)
+@app.route('/contracheques')
+def contracheques():
+    tamanho = request.args.get('tamanho')
+    # ... outros parâmetros
+    return render_template('contracheques.html', 
+                         tamanho=tamanho,
+                         incluir_conjuge=request.args.get('incluir_conjuge'),
+                         num_dependentes=request.args.get('num_dependentes'))
