@@ -34,12 +34,12 @@
                             <option value="8">8 - Titular + 7</option>
                             <option value="9">9 - Titular + 8</option>
                             <option value="10">10 - Titular + 9</option>
-                            <option value="10">11 - Titular + 10</option>
-                            <option value="10">12 - Titular + 11</option>
-                            <option value="10">13 - Titular + 12</option>
-                            <option value="10">14 - Titular + 13</option>
-                            <option value="10">15 - Titular + 14</option>
-                            <option value="10">16 - Titular + 15</option>
+                            <option value="11">11 - Titular + 10</option>
+                            <option value="12">12 - Titular + 11</option>
+                            <option value="13">13 - Titular + 12</option>
+                            <option value="14">14 - Titular + 13</option>
+                            <option value="15">15 - Titular + 14</option>
+                            <option value="16">16 - Titular + 15</option>
                         </select>
                     </div>
 
@@ -174,64 +174,79 @@
         });
 
         // Envio do formulário
-        familiaForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            try {
-                // Validação básica
-                if (!tamanhoFamilia.value) {
-                    throw new Error('Por favor, selecione o tamanho do grupo familiar');
-                }
-
-                // Mostrar loading
-                btnText.textContent = 'Processando...';
-                spinner.classList.remove('hidden');
-                submitBtn.disabled = true;
-
-                // Coletar dados
-                const formData = {
-                    tamanho_familia: tamanhoFamilia.value,
-                    incluir_conjuge: document.getElementById('incluir-conjuge').checked,
-                    dependentes: []
-                };
-
-                // Processar dependentes
-                document.querySelectorAll('.dependente-item').forEach(dep => {
-                    const id = dep.id.split('-')[1];
-                    formData.dependentes.push({
-                        nome: document.getElementById(`nome-${id}`).value,
-                        tipo: document.getElementById(`tipo-${id}`).value,
-                        nascimento: document.getElementById(`nascimento-${id}`).value,
-                        risco: document.getElementById(`risco-${id}`).checked,
-                        interrompido: document.getElementById(`interrompido-${id}`).checked,
-                        data_exclusao: document.getElementById(`data-exclusao-${id}`).value || null
-                    });
-                });
-
-                // Validar dependentes
-                const numDependentesEsperados = parseInt(formData.tamanho_familia) - 1 - (formData.incluir_conjuge ? 1 : 0);
-                if (formData.dependentes.length !== numDependentesEsperados) {
-                    throw new Error(`Por favor, adicione todos os ${numDependentesEsperados} dependentes`);
-                }
-
-                // Criar parâmetros da URL
-                const queryParams = new URLSearchParams();
-                queryParams.append('tamanho', formData.tamanho_familia);
-                queryParams.append('incluir_conjuge', formData.incluir_conjuge);
-                queryParams.append('num_dependentes', formData.dependentes.length);
-
-                // Redirecionar
-                window.location.href = `/contracheques?${queryParams.toString()}`;
-
-            } catch (error) {
-                alert(error.message);
-                // Restaurar botão
-                btnText.textContent = 'Continuar para Contracheques';
-                spinner.classList.add('hidden');
-                submitBtn.disabled = false;
+         familiaForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        try {
+            // Validação básica
+            if (!tamanhoFamilia.value) {
+                throw new Error('Por favor, selecione o tamanho do grupo familiar');
             }
-        });
+
+            // Mostrar loading
+            btnText.textContent = 'Processando...';
+            spinner.classList.remove('hidden');
+            submitBtn.disabled = true;
+
+            // Coletar dados
+            const formData = {
+                tamanho_familia: tamanhoFamilia.value,
+                incluir_conjuge: document.getElementById('incluir-conjuge').checked,
+                dependentes: []
+            };
+
+            // Processar dependentes
+            document.querySelectorAll('.dependente-item').forEach(dep => {
+                const id = dep.id.split('-')[1];
+                formData.dependentes.push({
+                    nome: document.getElementById(`nome-${id}`).value,
+                    tipo: document.getElementById(`tipo-${id}`).value,
+                    nascimento: document.getElementById(`nascimento-${id}`).value,
+                    risco: document.getElementById(`risco-${id}`).checked,
+                    interrompido: document.getElementById(`interrompido-${id}`).checked,
+                    data_exclusao: document.getElementById(`data-exclusao-${id}`).value || null
+                });
+            });
+
+            // Validar dependentes
+            const numDependentesEsperados = parseInt(formData.tamanho_familia) - 1 - (formData.incluir_conjuge ? 1 : 0);
+            if (formData.dependentes.length !== numDependentesEsperados) {
+                throw new Error(`Por favor, adicione todos os ${numDependentesEsperados} dependentes`);
+            }
+
+            // Enviar para o servidor
+            const response = await fetch('/salvar-familia', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Erro no servidor');
+            }
+
+            // Criar parâmetros da URL e redirecionar
+            const queryParams = new URLSearchParams();
+            queryParams.append('tamanho', formData.tamanho_familia);
+            queryParams.append('incluir_conjuge', formData.incluir_conjuge);
+            queryParams.append('num_dependentes', formData.dependentes.length);
+            
+            window.location.href = `/contracheques?${queryParams.toString()}`;
+
+        } catch (error) {
+            console.error('Erro:', error);
+            alert(error.message || 'Ocorreu um erro. Por favor, tente novamente.');
+            
+            // Restaurar botão
+            btnText.textContent = 'Continuar para Contracheques';
+            spinner.classList.add('hidden');
+            submitBtn.disabled = false;
+        }
     });
+});
     </script>
 </body>
 </html>
