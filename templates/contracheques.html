@@ -18,10 +18,17 @@
             <div class="content-box">
                 <h1>Upload de Contracheques</h1>
                 
-                <div class="resumo-familia">
+                 <div class="resumo-familia">
                     <h3>Resumo do Grupo Familiar</h3>
-                    <div id="familia-resumo"></div>
-                </div>
+                    <div id="familia-resumo">
+                        <p><strong>Titular:</strong> Cadastrado</p>
+                        {% if incluir_conjuge == 'true' %}
+                        <p><strong>Cônjuge:</strong> Incluído</p>
+                        {% endif %}
+                        {% if num_dependentes|int > 0 %}
+                        <p><strong>Dependentes:</strong> {{ num_dependentes }}</p>
+                        {% endif %}
+                    </div>
                 
                 <form id="upload-form" method="POST" action="/processar" enctype="multipart/form-data">
                     <div class="form-group">
