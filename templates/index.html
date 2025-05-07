@@ -19,7 +19,7 @@
             <div class="content-box">
                 <h1>Cadastro do Grupo Familiar</h1>
                 
-                <form id="familia-form" method="POST" action="/contracheques">
+                <form id="familia-form" method="POST">
                     <div class="form-group">
                         <label for="tamanho-familia">Tamanho do Grupo Familiar:</label>
                         <select id="tamanho-familia" name="tamanho_familia" required>
@@ -34,23 +34,17 @@
                             <option value="8">8 - Titular + 7</option>
                             <option value="9">9 - Titular + 8</option>
                             <option value="10">10 - Titular + 9</option>
-                            <option value="11">11 - Titular + 10</option>
-                            <option value="12">12 - Titular + 11</option>
-                            <option value="13">13 - Titular + 12</option>
-                            <option value="14">14 - Titular + 13</option>
-                            <option value="15">15 - Titular + 14</option>
-                            <option value="16">16 - Titular + 15</option>
-                            <option value="17">17 - Titular + 16</option>
-                            <option value="18">18 - Titular + 17</option>
-                            <option value="19">19 - Titular + 18</option>
-                            <option value="20">20 - Titular + 19</option>
-                            <option value="21">21 - Titular + 20</option
-                           
+                            <option value="10">10 - Titular + 10</option>
+                            <option value="10">10 - Titular + 11</option>
+                            <option value="10">10 - Titular + 12</option>
+                            <option value="10">10 - Titular + 13</option>
+                            <option value="10">10 - Titular + 14</option>
+                            <option value="10">10 - Titular + 15</option>
                         </select>
                     </div>
 
                     <div id="conjuge-container" class="hidden">
-                        <div class="form-group">
+                        <div class="form-group check-group">
                             <input type="checkbox" id="incluir-conjuge" name="incluir_conjuge">
                             <label for="incluir-conjuge">Incluir cônjuge/companheiro(a)</label>
                         </div>
@@ -63,7 +57,10 @@
                     </div>
 
                     <div class="form-group">
-                        <button type="submit" class="process-btn">Continuar para Contracheques</button>
+                        <button type="submit" class="process-btn" id="submit-btn">
+                            <span class="btn-text">Continuar para Contracheques</span>
+                            <span class="spinner hidden"></span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -92,6 +89,9 @@
         const dependentesLista = document.getElementById('dependentes-lista');
         const btnAdicionarDependente = document.getElementById('adicionar-dependente');
         const familiaForm = document.getElementById('familia-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = submitBtn.querySelector('.btn-text');
+        const spinner = submitBtn.querySelector('.spinner');
 
         // Atualizar interface quando o tamanho da família muda
         tamanhoFamilia.addEventListener('change', function() {
@@ -174,35 +174,64 @@
         });
 
         // Envio do formulário
-        familiaForm.addEventListener('submit', function(e) {
+        familiaForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const formData = {
-                tamanho_familia: tamanhoFamilia.value,
-                incluir_conjuge: document.getElementById('incluir-conjuge').checked,
-                dependentes: []
-            };
+            try {
+                // Validação básica
+                if (!tamanhoFamilia.value) {
+                    throw new Error('Por favor, selecione o tamanho do grupo familiar');
+                }
 
-            document.querySelectorAll('.dependente-item').forEach(dep => {
-                const id = dep.id.split('-')[1];
-                formData.dependentes.push({
-                    nome: document.getElementById(`nome-${id}`).value,
-                    tipo: document.getElementById(`tipo-${id}`).value,
-                    nascimento: document.getElementById(`nascimento-${id}`).value,
-                    risco: document.getElementById(`risco-${id}`).checked,
-                    interrompido: document.getElementById(`interrompido-${id}`).checked,
-                    data_exclusao: document.getElementById(`data-exclusao-${id}`).value
+                // Mostrar loading
+                btnText.textContent = 'Processando...';
+                spinner.classList.remove('hidden');
+                submitBtn.disabled = true;
+
+                // Coletar dados
+                const formData = {
+                    tamanho_familia: tamanhoFamilia.value,
+                    incluir_conjuge: document.getElementById('incluir-conjuge').checked,
+                    dependentes: []
+                };
+
+                // Processar dependentes
+                document.querySelectorAll('.dependente-item').forEach(dep => {
+                    const id = dep.id.split('-')[1];
+                    formData.dependentes.push({
+                        nome: document.getElementById(`nome-${id}`).value,
+                        tipo: document.getElementById(`tipo-${id}`).value,
+                        nascimento: document.getElementById(`nascimento-${id}`).value,
+                        risco: document.getElementById(`risco-${id}`).checked,
+                        interrompido: document.getElementById(`interrompido-${id}`).checked,
+                        data_exclusao: document.getElementById(`data-exclusao-${id}`).value || null
+                    });
                 });
-            });
 
-            const queryParams = new URLSearchParams();
-            queryParams.append('tamanho', formData.tamanho_familia);
-            queryParams.append('incluir_conjuge', formData.incluir_conjuge);
-            queryParams.append('num_dependentes', formData.dependentes.length);
-            
-            window.location.href = `/contracheques.html?${queryParams.toString()}`;
+                // Validar dependentes
+                const numDependentesEsperados = parseInt(formData.tamanho_familia) - 1 - (formData.incluir_conjuge ? 1 : 0);
+                if (formData.dependentes.length !== numDependentesEsperados) {
+                    throw new Error(`Por favor, adicione todos os ${numDependentesEsperados} dependentes`);
+                }
+
+                // Criar parâmetros da URL
+                const queryParams = new URLSearchParams();
+                queryParams.append('tamanho', formData.tamanho_familia);
+                queryParams.append('incluir_conjuge', formData.incluir_conjuge);
+                queryParams.append('num_dependentes', formData.dependentes.length);
+
+                // Redirecionar
+                window.location.href = `/contracheques.html?${queryParams.toString()}`;
+
+            } catch (error) {
+                alert(error.message);
+                // Restaurar botão
+                btnText.textContent = 'Continuar para Contracheques';
+                spinner.classList.add('hidden');
+                submitBtn.disabled = false;
+            }
         });
     });
-</script>
+    </script>
 </body>
 </html>
