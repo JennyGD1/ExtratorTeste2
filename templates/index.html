@@ -221,7 +221,7 @@
                 queryParams.append('num_dependentes', formData.dependentes.length);
 
                 // Redirecionar
-                window.location.href = `/contracheques.html?${queryParams.toString()}`;
+                window.location.href = `/contracheques?${queryParams.toString()}`;
 
             } catch (error) {
                 alert(error.message);
