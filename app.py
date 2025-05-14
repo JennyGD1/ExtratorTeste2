@@ -391,9 +391,6 @@ def analise_ano(ano):
         familia=familia,
         resumo=resumo
     )
-
-if __name__ == '__main__':
-    app.run(debug=True)
 @app.route('/contracheques')
 def contracheques():
     tamanho = request.args.get('tamanho')
@@ -402,3 +399,6 @@ def contracheques():
                          tamanho=tamanho,
                          incluir_conjuge=request.args.get('incluir_conjuge'),
                          num_dependentes=request.args.get('num_dependentes'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
