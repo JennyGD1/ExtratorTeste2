@@ -1,13 +1,13 @@
 /* static/css/index.css */
 
 body.page-index {
-  padding: 20px;
-  background-color: var(--fundo-azul);
-  color: var(--branco);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
+    padding: 20px;
+    background-color: var(--fundo-azul);
+    color: var(--branco);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
 }
 
 .page-index h1 {
@@ -15,123 +15,138 @@ body.page-index {
 }
 
 .borda-animada {
-  position: relative;
-  border-radius: 40px;
-  padding: 4px;
-  margin: 20px;
-  overflow: hidden;
+    position: relative;
+    border-radius: 40px;
+    padding: 4px;
+    margin: 20px;
+    overflow: hidden;
 }
 
 .borda-animada::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  border-radius: 40px;
-  background: conic-gradient(
-    from var(--gradient-angle),
-    var(--branco) 0deg 120deg,
-    var(--maida-rosa) 120deg 150deg,
-    var(--branco) 150deg 270deg,
-    var(--maida-amarelo) 270deg 300deg,
-    var(--branco) 300deg 360deg
-  );
-  animation: fluxoContinuoBorda 4s linear infinite;
-  z-index: 0;
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 40px;
+    background: conic-gradient(
+        from var(--gradient-angle),
+        var(--branco) 0deg 120deg,
+        var(--maida-rosa) 120deg 150deg,
+        var(--branco) 150deg 270deg,
+        var(--maida-amarelo) 270deg 300deg,
+        var(--branco) 300deg 360deg
+    );
+    animation: fluxoContinuoBorda 4s linear infinite;
+    z-index: 0;
 }
 
 .content-box {
-  background-color: white;
-  border-radius: 36px;
-  padding: 40px;
-  position: relative;
-  z-index: 1;
-  text-align: center;
+    background-color: white;
+    border-radius: 36px;
+    padding: 40px;
+    position: relative;
+    z-index: 1;
+    text-align: center;
 }
 
 .page-index input[type="file"] {
-  display: none;
+    display: none;
 }
 
-.page-index label,
+/* Estilos para os labels dentro do form-group */
+.page-index .form-group label {
+    display: block; /* Para ocupar a largura total e o select ficar abaixo */
+    margin-bottom: 5px; /* Espaçamento entre label e select */
+    font-weight: bold; /* Opcional: para destacar o label */
+    color: var(--maida-azul); /* Cor do texto do label */
+    padding: 8px 10px; /* Reduzindo o padding para não parecer botão */
+    border-radius: 5px; /* Uma pequena borda arredondada é comum em labels */
+    background-color: transparent; /* Fundo transparente para não parecer botão */
+    border: none; /* Removendo a borda */
+    cursor: default; /* Cursor padrão para labels */
+}
+
+/* Estilos específicos para os botões */
 .page-index button {
-  display: inline-block;
-  padding: 12px 25px;
-  font-size: 16px;
-  font-weight: bold;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
+    display: inline-block;
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    margin-top: 15px; /* Mantendo o espaçamento superior */
 }
 
-.page-index label {
-  background-color: var(--maida-rosa);
-  color: white;
-  margin-bottom: 10px;
+/* Estilo específico para o botão primário (Continuar) */
+.page-index button.process-btn {
+    background-color: var(--maida-amarelo);
+    color: var(--maida-azul);
 }
 
-.page-index label:hover {
-  opacity: 0.9;
-  transform: scale(1.02);
+.page-index button.process-btn:hover {
+    background-color: var(--maida-rosa);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.page-index button {
-  background-color: var(--maida-amarelo);
-  color: var(--maida-azul);
-  margin-top: 15px;
+/* Estilo específico para o botão secundário (Adicionar Dependente) */
+.page-index button.btn-secondary {
+    background-color: var(--maida-rosa);
+    color: white;
+    /* Outros estilos específicos se necessário */
 }
 
-.page-index button:hover {
-  background-color: var(--maida-rosa);
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+.page-index button.btn-secondary:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
 }
 
 .file-name {
-  margin-top: 8px;
-  font-size: 14px;
-  color: var(--maida-azul);
-  min-height: 20px;
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--maida-azul);
+    min-height: 20px;
 }
 
 progress {
-  width: 100%;
-  margin-top: 15px;
-  height: 8px;
-  border-radius: 5px;
-  appearance: none;
+    width: 100%;
+    margin-top: 15px;
+    height: 8px;
+    border-radius: 5px;
+    appearance: none;
 }
 
 progress::-webkit-progress-bar {
-  background-color: #eee;
-  border-radius: 5px;
+    background-color: #eee;
+    border-radius: 5px;
 }
 
 progress::-webkit-progress-value {
-  background-color: var(--maida-rosa);
-  border-radius: 5px;
+    background-color: var(--maida-rosa);
+    border-radius: 5px;
 }
 
 .spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid var(--maida-azul);
-  border-radius: 50%;
-  animation: spinBtn 0.8s linear infinite;
-  margin-right: 8px;
-  vertical-align: middle;
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid var(--maida-azul);
+    border-radius: 50%;
+    animation: spinBtn 0.8s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
 }
 
 @media (max-width: 600px) {
-  .page-index .content-box {
-    padding: 30px 20px;
-  }
-  .page-index label,
-  .page-index button {
-    padding: 10px 20px;
-    font-size: 15px;
-  }
+    .page-index .content-box {
+        padding: 30px 20px;
+    }
+    .page-index label,
+    .page-index button {
+        padding: 10px 20px;
+        font-size: 15px;
+    }
 }
