@@ -195,8 +195,6 @@ def index():
 @app.route('/familia', methods=['GET', 'POST'])
 def cadastrar_familia():
     if request.method == 'POST':
-        familia = GrupoFamiliar()
-        errors = []
         
         # Processar titular (obrigatório)
         titular_nasc = request.form.get('titular_nascimento')
@@ -246,16 +244,15 @@ def cadastrar_familia():
                 if not familia.adicionar_membro(categoria, nascimento, risco, data_exclusao):
                     errors.append(f"Data de nascimento inválida para {tipo}")
         
-        if not errors:
+  if not errors:
             session['familia'] = familia.__dict__
-            flash('Família cadastrada com sucesso!', 'success')
-            return redirect(url_for('index'))
-        
-        for error in errors:
-            flash(error, 'error')
+            return redirect(url_for('contracheques',
+                                  tamanho=request.form.get('tamanho_familia'),
+                                  incluir_conjuge='true' if 'incluir_conjuge' in request.form else 'false',
+                                  num_dependentes=len([k for k in request.form if k.startswith('tipo_')])))
     
     return render_template('index.html')
-    
+       
 @app.route('/upload', methods=['POST'])
 def upload():
     if 'files' not in request.files:
@@ -393,12 +390,43 @@ def analise_ano(ano):
     )
 @app.route('/contracheques')
 def contracheques():
-    tamanho = request.args.get('tamanho')
-    # ... outros parâmetros
-    return render_template('contracheques.html', 
-                         tamanho=tamanho,
-                         incluir_conjuge=request.args.get('incluir_conjuge'),
-                         num_dependentes=request.args.get('num_dependentes'))
+    try:
+        return render_template(
+            'contracheques.html',
+            tamanho=request.args.get('tamanho'),
+            incluir_conjuge=request.args.get('incluir_conjuge', 'false'),
+            num_dependentes=request.args.get('num_dependentes', '0')
+        )
+    except Exception as e:
+        app.logger.error(f"Erro em contracheques: {str(e)}")
+        flash("Erro ao carregar a página de contracheques", "error")
+        return redirect(url_for('index'))
+
+@app.route('/salvar-familia', methods=['POST'])
+@validate_family_data
+def salvar_familia():
+    try:
+        data = request.get_json()
+        
+        # Validações adicionais
+        if not data.get('tamanho_familia'):
+            return jsonify({"error": "Tamanho da família é obrigatório"}), 400
+        
+        # Processamento (simplificado)
+        familia = GrupoFamiliar()
+        # ... (adicione aqui a lógica de processamento)
+        
+        return jsonify({
+            "success": True,
+            "redirect": url_for('contracheques',
+                              tamanho=data['tamanho_familia'],
+                              incluir_conjuge=data.get('incluir_conjuge', 'false'),
+                              num_dependentes=data.get('num_dependentes', 0))
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Erro em salvar-familia: {str(e)}")
+        return jsonify({"error": "Erro interno no servidor"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
