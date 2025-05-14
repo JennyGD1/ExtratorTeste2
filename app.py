@@ -2,6 +2,7 @@ import fitz  # PyMuPDF
 import re
 import os
 import json
+from functools import wraps
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from flask import Flask, render_template, request, redirect, url_for, flash, session
@@ -194,8 +195,10 @@ def index():
 
 @app.route('/familia', methods=['GET', 'POST'])
 def cadastrar_familia():
+    errors = []
+    familia = GrupoFamiliar()
+    
     if request.method == 'POST':
-        
         # Processar titular (obrigatório)
         titular_nasc = request.form.get('titular_nascimento')
         if not titular_nasc:
@@ -244,12 +247,16 @@ def cadastrar_familia():
                 if not familia.adicionar_membro(categoria, nascimento, risco, data_exclusao):
                     errors.append(f"Data de nascimento inválida para {tipo}")
         
-  if not errors:
+        if not errors:
             session['familia'] = familia.__dict__
             return redirect(url_for('contracheques',
                                   tamanho=request.form.get('tamanho_familia'),
                                   incluir_conjuge='true' if 'incluir_conjuge' in request.form else 'false',
                                   num_dependentes=len([k for k in request.form if k.startswith('tipo_')])))
+    
+    if errors:
+        for error in errors:
+            flash(error, 'error')
     
     return render_template('index.html')
        
@@ -403,26 +410,42 @@ def contracheques():
         return redirect(url_for('index'))
 
 @app.route('/salvar-familia', methods=['POST'])
-@validate_family_data
 def salvar_familia():
-    try:
-        data = request.get_json()
-        
-        # Validações adicionais
-        if not data.get('tamanho_familia'):
-            return jsonify({"error": "Tamanho da família é obrigatório"}), 400
-        
-        # Processamento (simplificado)
-        familia = GrupoFamiliar()
-        # ... (adicione aqui a lógica de processamento)
-        
-        return jsonify({
-            "success": True,
-            "redirect": url_for('contracheques',
-                              tamanho=data['tamanho_familia'],
-                              incluir_conjuge=data.get('incluir_conjuge', 'false'),
-                              num_dependentes=data.get('num_dependentes', 0))
-        })
+    def validate_family_data(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            data = request.get_json()
+            required = ['tamanho_familia']
+            if not all(field in data for field in required):
+                return jsonify({"error": f"Campos obrigatórios faltando: {required}"}), 400
+            return f(*args, **kwargs)
+        return wrapper
+
+    @validate_family_data
+    def processar_dados_familia(data):
+        try:
+            familia = GrupoFamiliar()
+            
+            # Processar titular
+            if not familia.adicionar_membro('titular', data.get('titular_nascimento'), False):
+                return jsonify({"error": "Data de nascimento do titular inválida"}), 400
+            
+            # Processar outros membros da família...
+            # (Adicione aqui o processamento completo dos dados)
+            
+            return jsonify({
+                "success": True,
+                "redirect_url": url_for('contracheques',
+                    tamanho=data['tamanho_familia'],
+                    incluir_conjuge='true' if data.get('incluir_conjuge') else 'false',
+                    num_dependentes=len(data.get('dependentes', []))
+            })
+            
+        except Exception as e:
+            app.logger.error(f"Erro em salvar-familia: {str(e)}")
+            return jsonify({"error": "Erro interno no servidor"}), 500
+
+    return processar_dados_familia(request.get_json())
         
     except Exception as e:
         app.logger.error(f"Erro em salvar-familia: {str(e)}")
